@@ -1,4 +1,9 @@
 #!/bin/bash
+echo "Repos"
+echo "Add spotify"
+curl -sS https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add - 
+echo "deb http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+
 echo "Update"
 apt-get update
 
@@ -38,3 +43,5 @@ echo "Install Docker Compose"
 sudo curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
+echo "Install Spotify"
+apt install spotify-client
