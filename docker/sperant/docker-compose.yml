@@ -3,20 +3,10 @@ services:
   db:
     image: postgres:11.1
     volumes:
-      - pg-sperant:/var/lib/postgresql/data
-  delayed_job:
-    build: .
-odríguezand: bundle exec rake jobs:work
-    volumes:
-      - .:/sperant
-    depends_on:
-      - db
-    tty: true
-    stdin_open: true
-
+      - pg:/var/lib/postgresql/data
   web:  
     build: .
-    command: bundle exec rails s puma -p 3000
+    command: bundle exec rails s puma -b 0.0.0.0 -p 3000
     volumes:
       - .:/sperant
     ports:
@@ -26,5 +16,5 @@ odríguezand: bundle exec rake jobs:work
     tty: true
     stdin_open: true
 volumes:
-  pg-sperant:
+  pg:
     driver: local
