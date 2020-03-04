@@ -7,6 +7,9 @@ Plug 'scrooloose/nerdtree' " Show Tree of files
 Plug 'vim-airline/vim-airline' " Bar of status
 Plug 'vim-airline/vim-airline-themes' " Themes for bar of status
 Plug 'airblade/vim-gitgutter' " Status of changes Git
+Plug 'wakatime/vim-wakatime' " Wakatime
+Plug 'posva/vim-vue' " Manage Vue
+Plug 'mattn/emmet-vim' " Emmet
 
 call plug#end()
 
@@ -18,3 +21,5 @@ set expandtab
 set tabstop=2
 set softtabstop=2
 set shiftwidth=2
+
+let g:user_emmet_leader_key='<C-X>'
