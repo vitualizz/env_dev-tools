@@ -1,4 +1,9 @@
 #!/bin/bash
+echo "Base installs"
+
+echo "Install curl"
+apt install -y curl
+
 echo "Repos"
 echo "Add spotify"
 curl -sS https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add - 
@@ -15,9 +20,6 @@ apt install -y gnome-tweaks
 
 echo "Install GIT"
 apt install -y git
-
-echo "Install curl"
-apt install -y curl
 
 echo "Install ZSH"
 apt install -y zsh

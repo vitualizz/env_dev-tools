@@ -4,6 +4,13 @@ services:
     image: postgres:11.1
     volumes:
       - pg:/var/lib/postgresql/data
+  delayed_job:
+    build: .
+    command: bundle exec rails jobs:work
+    volumes:
+      - .:/sperant
+    depends_on:
+      - db
   web:  
     build: .
     command: bundle exec rails s puma -b 0.0.0.0 -p 3000
@@ -13,8 +20,15 @@ services:
       - "3000:3000"
     depends_on:
       - db
+    links:
+      - mails
     tty: true
     stdin_open: true
-volumes:
+  mailcatcher:
+    image: instructure/mailcatcher
+    environment:
+      VIRTUAL_HOST: 0.0.0.0
+      VIRTUAL_PORT: 8080
+  volumes:
   pg:
     driver: local
