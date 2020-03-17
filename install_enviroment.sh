@@ -8,25 +8,25 @@ echo "Update"
 apt-get update
 
 echo "Preload"
-sudo apt-get install preload
+apt install -y preload
 
 echo "Gnome"
-apt install gnome-tweaks
+apt install -y gnome-tweaks
 
 echo "Install GIT"
-apt install git
+apt install -y git
 
 echo "Install curl"
-apt install curl
+apt install -y curl
 
 echo "Install ZSH"
-apt install zsh
+apt install -y zsh
 
 echo "Install Terminator"
-apt install terminator
+apt install -y terminator
 
 echo "Install neovim"
-apt install neovim
+apt install -y neovim
 
 echo "Neovim Plugins"
 curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -36,12 +36,12 @@ apt-get install apt-transport-https ca-certificates gnupg-agent software-propert
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 apt-key fingerprint 0EBFCD88
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu disco stable"
-apt install docker-ce
+apt install -y docker-ce
 usermod -aG docker $USER
 
 echo "Install Docker Compose"
-sudo curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 
 echo "Install Spotify"
-apt install spotify-client
+apt install -y spotify-client
