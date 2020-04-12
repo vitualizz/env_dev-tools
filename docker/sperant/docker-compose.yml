@@ -21,7 +21,7 @@ services:
     depends_on:
       - db
     links:
-      - mails
+      - mailcatcher
     tty: true
     stdin_open: true
   mailcatcher:
@@ -29,6 +29,6 @@ services:
     environment:
       VIRTUAL_HOST: 0.0.0.0
       VIRTUAL_PORT: 8080
-  volumes:
+volumes:
   pg:
     driver: local
