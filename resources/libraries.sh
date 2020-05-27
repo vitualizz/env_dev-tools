@@ -8,6 +8,7 @@ apt-get install -y curl \
                    gnupg-agent \
                    ca-certificates \
                    apt-transport-https \
+                   fonts-powerline
 
 # Docker
 echo "========== Import Dependency Docker =========="
