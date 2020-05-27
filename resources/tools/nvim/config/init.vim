@@ -21,6 +21,7 @@ Plug 'dense-analysis/ale' " Eslint JS
 
 " ColorScheme
 Plug 'rakr/vim-one'
+Plug 'joshdick/onedark.vim'
 
 call plug#end()
 
