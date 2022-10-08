@@ -7,6 +7,7 @@ Plug 'tpope/vim-rails' " Rails
 Plug 'tpope/vim-fugitive' " Git
 Plug 'posva/vim-vue' " Vue
 Plug 'digitaltoad/vim-pug' " Pug
+Plug 'slim-template/vim-slim' " Slim
 Plug 'tpope/vim-haml' " Haml
 Plug 'kchmck/vim-coffee-script' " Coffee Script
 

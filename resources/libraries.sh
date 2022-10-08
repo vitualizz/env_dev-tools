@@ -21,6 +21,10 @@ echo "========== Import Dependency Spotify =========="
 curl -sS https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add - 
 add-apt-repository "deb http://repository.spotify.com stable non-free"
 
+# Ruby version manager
+echo "========== Import Ruby version manager =========="
+add-apt-repository -y ppa:rael-gc/rvm
+
 # Update & Upgrade
 echo "========== Update && Upgrade =========="
 apt-get update && apt-get upgrade

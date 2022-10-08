@@ -41,12 +41,16 @@
       order = 0
       profile = default
       uuid = 8d2a99b7-d957-4864-a638-f1af8b290574
+      group = Work
+      directory = /home/vitualizz/Development
     [[[terminal4]]]
       type = Terminal
       parent = child2
       order = 1
       profile = default
       uuid = c8f17639-4cc7-4e36-b882-0bdfd881e637
+      group = Work
+      directory = /home/vitualizz/Development
     [[[child5]]]
       type = HPaned
       parent = child1
@@ -59,10 +63,14 @@
       order = 0
       profile = default
       uuid = 32ea5d92-247d-4836-b3e7-fe5a34611297
+      group = Work
+      directory = /home/vitualizz/Development
     [[[terminal7]]]
       type = Terminal
       parent = child5
       order = 1
       profile = default
       uuid = cf186475-ef3e-42bd-b9bf-fcdfa8b928f1
+      group = Work
+      directory = /home/vitualizz/Development
 [plugins]
