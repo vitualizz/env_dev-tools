@@ -1,0 +1,10 @@
+FROM golang:1.24-alpine
+
+RUN apk add --no-cache git bash curl wget zsh sudo
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+CMD ["sh", "-c", "go build -buildvcs=false -o /tmp/envsetup ./cmd/envsetup/ && /tmp/envsetup"]

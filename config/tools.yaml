@@ -1,0 +1,617 @@
+# =============================================================================
+# EnvSetup Tools Configuration
+# =============================================================================
+# Distro detection order: arch > debian > fedora > suse > alpine > brew
+# Install commands per distro are executed in order until one succeeds
+# =============================================================================
+
+themes:
+  - name: tokyonight
+    display_name: "Tokyo Night"
+    category: theme
+    colors:
+      background: "0x1A1B26"
+      foreground: "0xC0CAF5"
+      normal:
+        black: "0x414868"
+        red: "0xF7768E"
+        green: "0x73DACA"
+        yellow: "0xE0AF68"
+        blue: "0x7AA2F7"
+        magenta: "0xBB9AF7"
+        cyan: "0x7DCFFF"
+        white: "0xC0CAF5"
+      bright:
+        black: "0x414868"
+        red: "0xF7768E"
+        green: "0x73DACA"
+        yellow: "0xE0AF68"
+        blue: "0x7AA2F7"
+        magenta: "0xBB9AF7"
+        cyan: "0x7DCFFF"
+        white: "0xC0CAF5"
+
+  - name: nord
+    display_name: "Nord"
+    category: theme
+    colors:
+      background: "0x2E3440"
+      foreground: "0xD8DEE9"
+      normal:
+        black: "0x3B4252"
+        red: "0xBF616A"
+        green: "0xA3BE8C"
+        yellow: "0xEBCB8B"
+        blue: "0x81A1C1"
+        magenta: "0xB48EAD"
+        cyan: "0x88C0D0"
+        white: "0xE5E9F0"
+      bright:
+        black: "0x4C566A"
+        red: "0xBF616A"
+        green: "0xA3BE8C"
+        yellow: "0xEBCB8B"
+        blue: "0x81A1C1"
+        magenta: "0xB48EAD"
+        cyan: "0x8FBCBB"
+        white: "0xECEFF4"
+
+  - name: dracula
+    display_name: "Dracula"
+    category: theme
+    colors:
+      background: "0x282A36"
+      foreground: "0xF8F8F2"
+      normal:
+        black: "0x21222C"
+        red: "0xFF5555"
+        green: "0x50FA7B"
+        yellow: "0xF1FA8C"
+        blue: "0xBD93F9"
+        magenta: "0xFF79C6"
+        cyan: "0x8BE9FD"
+        white: "0xF8F8F2"
+      bright:
+        black: "0x6272A4"
+        red: "0xFF6E6E"
+        green: "0x69FF94"
+        yellow: "0xFFFFA5"
+        blue: "0xD6ACFF"
+        magenta: "0xFF92DF"
+        cyan: "0xA4FFFF"
+        white: "0xFFFFFF"
+
+# =============================================================================
+# Tools Definition
+# =============================================================================
+# Fields:
+#   - name: unique identifier
+#   - category: terminal | shell | editor | tools | container | fonts
+#   - depends_on: list of tools that must be installed first (order matters)
+#   - install: map of distro -> install command (executed in order until success)
+#   - uninstall: map of distro -> uninstall command (optional)
+#   - check: command to verify installation
+#   - version: optional version constraint (not enforced, for display)
+#   - description: human-readable description
+#   - source_url: reference link
+#   - alternatives: list of alternative names (e.g., nvim, vim)
+#   - enabled: shown in UI by default
+#   - required: must be installed (no option to disable)
+# =============================================================================
+
+tools:
+  # =====================================================================
+  # TERMINAL
+  # =====================================================================
+  - name: kitty
+    category: terminal
+    install:
+      arch: sudo pacman -S --noconfirm kitty
+      debian: sudo apt-get install -y kitty
+      fedora: sudo dnf install -y kitty
+      suse: sudo zypper install -y kitty
+      fallback: curl -sSL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+    uninstall:
+      arch: sudo pacman -R --noconfirm kitty
+      debian: sudo apt-get remove -y kitty
+      fedora: sudo dnf remove -y kitty
+    check: kitty --version
+    description: "Terminal emulator"
+    enabled: true
+    required: true
+
+  - name: kitty-config
+    category: terminal
+    depends_on: [kitty]
+    install:
+      all: |
+        mkdir -p ~/.config/kitty
+        cp -r /app/config/kitty/* ~/.config/kitty/
+    uninstall:
+      all: rm -rf ~/.config/kitty
+    check: test -f ~/.config/kitty/kitty.conf
+    description: "Kitty Tokyo Night config"
+    enabled: true
+    required: false
+
+  # =====================================================================
+  # SHELL
+  # =====================================================================
+  - name: zsh
+    category: shell
+    install:
+      debian: sudo apt-get install -y zsh
+      arch: sudo pacman -S --noconfirm zsh
+      fedora: sudo dnf install -y zsh
+      suse: sudo zypper install -y zsh
+    uninstall:
+      debian: sudo apt-get remove -y zsh
+      arch: sudo pacman -R --noconfirm zsh
+      fedora: sudo dnf remove -y zsh
+    check: zsh --version
+    description: "Z shell"
+    enabled: true
+    required: true
+    alternatives: [bash, fish]
+
+  - name: oh-my-zsh
+    category: shell
+    depends_on: [zsh]
+    install:
+      all: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    uninstall:
+      all: uninstall_oh_my_zsh 2>/dev/null || rm -rf ~/.oh-my-zsh
+    check: test -d ~/.oh-my-zsh
+    description: "Oh My Zsh framework"
+    enabled: true
+    required: false
+
+  - name: powerlevel10k
+    category: shell
+    depends_on: [oh-my-zsh]
+    install:
+      all: git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k
+    uninstall:
+      all: rm -rf ~/.oh-my-zsh/custom/themes/powerlevel10k
+    check: test -d ~/.oh-my-zsh/custom/themes/powerlevel10k
+    description: "Powerlevel10k theme"
+    enabled: true
+    required: false
+
+  - name: zsh-config
+    category: shell
+    depends_on: [zsh, oh-my-zsh]
+    install:
+      all: |
+        cp /app/config/zsh/zshrc ~/.zshrc
+        cp /app/config/zsh/zshenv ~/.zshenv
+        cp /app/config/zsh/zprofile ~/.zprofile
+    uninstall:
+      all: rm -f ~/.zshrc ~/.zshenv ~/.zprofile
+    check: test -f ~/.zshrc
+    description: "Zsh configuration"
+    enabled: true
+    required: false
+
+  - name: starship
+    category: shell
+    depends_on: [zsh]
+    install:
+      all: curl -sS https://starship.rs/install.sh | sh
+    uninstall:
+      all: rm -f ~/.local/bin/starship
+    check: starship --version
+    description: "Starship prompt"
+    enabled: true
+    required: false
+    source_url: https://starship.rs
+
+  # =====================================================================
+  # EDITOR
+  # =====================================================================
+  - name: neovim
+    category: editor
+    install:
+      debian: sudo apt-get install -y neovim
+      arch: sudo pacman -S --noconfirm neovim
+      fedora: sudo dnf install -y neovim
+      fallback: |
+        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+        sudo tar xzf nvim-linux64.tar.gz -C /opt
+        sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+        rm -f nvim-linux64.tar.gz
+    uninstall:
+      debian: sudo apt-get remove -y neovim
+      arch: sudo pacman -R --noconfirm neovim
+      fedora: sudo dnf remove -y neovim
+      fallback: sudo rm -f /usr/local/bin/nvim
+    check: nvim --version
+    description: "Text editor"
+    enabled: true
+    required: true
+    source_url: https://github.com/neovim/neovim
+
+  # =====================================================================
+  # VERSION MANAGER
+  # =====================================================================
+  - name: mise
+    category: tools
+    install:
+      all: curl https://mise.run | sh
+    uninstall:
+      all: rm -rf ~/.local/share/mise
+    check: mise --version
+    description: "Polyglot version manager (Rust, Node, Python, etc.)"
+    enabled: true
+    required: true
+    source_url: https://mise.jdx.dev
+
+  # =====================================================================
+  # AI
+  # =====================================================================
+  - name: opencode
+    category: tools
+    install:
+      all: curl -sSL https://get.opencode.ai | sh
+    uninstall:
+      all: rm -f ~/.opencode/bin/opencode
+    check: opencode --version
+    description: "AI coding assistant"
+    enabled: true
+    required: false
+    source_url: https://opencode.ai
+
+  # =====================================================================
+  # CONTAINERS
+  # =====================================================================
+  - name: docker
+    category: container
+    install:
+      all: curl -fsSL https://get.docker.com | sh
+    uninstall:
+      debian: sudo apt-get remove -y docker-ce
+      arch: sudo pacman -R --noconfirm docker
+      fedora: sudo dnf remove -y docker-ce
+    check: docker --version
+    description: "Container platform"
+    enabled: true
+    required: false
+    source_url: https://docker.com
+
+  - name: docker-compose
+    category: container
+    depends_on: [docker]
+    install:
+      debian: |
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-plugin
+      arch: |
+        sudo pacman -S --noconfirm docker-compose
+      fedora: |
+        sudo dnf install -y docker-compose
+      fallback: |
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    uninstall:
+      debian: sudo apt-get remove -y docker-compose-plugin
+      arch: sudo pacman -R --noconfirm docker-compose
+      fedora: sudo dnf remove -y docker-compose
+      fallback: sudo rm -f /usr/local/bin/docker-compose
+    check: docker compose version
+    description: "Docker Compose plugin"
+    enabled: true
+    required: false
+    source_url: https://github.com/docker/compose
+
+  # =====================================================================
+  # CLI TOOLS: FUZZY FINDER
+  # =====================================================================
+  - name: fzf
+    category: tools
+    install:
+      all: |
+        git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+        ~/.fzf/install --all
+    uninstall:
+      all: rm -rf ~/.fzf
+    check: fzf --version
+    description: "Fuzzy finder"
+    enabled: true
+    required: false
+    source_url: https://github.com/junegunn/fzf
+
+  # =====================================================================
+  # CLI TOOLS: BAT
+  # =====================================================================
+  - name: bat
+    category: tools
+    install:
+      debian: sudo apt-get install -y bat
+      arch: sudo pacman -S --noconfirm bat
+      fedora: sudo dnf install -y bat
+      fallback: cargo install bat
+    uninstall:
+      debian: sudo apt-get remove -y bat
+      arch: sudo pacman -R --noconfirm bat
+      fedora: sudo dnf remove -y bat
+      fallback: cargo uninstall bat
+    check: bat --version
+    description: "Cat with syntax highlighting"
+    enabled: true
+    required: false
+    source_url: https://github.com/sharkdp/bat
+
+  # =====================================================================
+  # CLI TOOLS: EZA
+  # =====================================================================
+  - name: eza
+    category: tools
+    install:
+      arch: sudo pacman -S --noconfirm eza
+      fedora: |
+        sudo rpmfusion-free=$(grep -q '^enabled=1' /etc/fedora-release && echo "--enablerepo=rpmfusion_free" || echo "")
+        sudo dnf install -y eza
+      fallback: cargo install eza
+    uninstall:
+      arch: sudo pacman -R --noconfirm eza
+      fedora: sudo dnf remove -y eza
+      fallback: cargo uninstall eza
+    check: eza --version
+    description: "Modern ls replacement"
+    enabled: true
+    required: false
+    source_url: https://github.com/eza-community/eza
+
+  # =====================================================================
+  # CLI TOOLS: YAZI
+  # =====================================================================
+  - name: yazi
+    category: tools
+    install:
+      all: cargo install yazi-fm --locked
+    uninstall:
+      all: cargo uninstall yazi-fm
+    check: ya --version
+    description: "Terminal file manager"
+    enabled: true
+    required: false
+    source_url: https://github.com/sxyazi/yazi
+
+  # =====================================================================
+  # CLI TOOLS: JQ
+  # =====================================================================
+  - name: jq
+    category: tools
+    install:
+      debian: sudo apt-get install -y jq
+      arch: sudo pacman -S --noconfirm jq
+      fedora: sudo dnf install -y jq
+      suse: sudo zypper install -y jq
+      brew: brew install jq
+    uninstall:
+      debian: sudo apt-get remove -y jq
+      arch: sudo pacman -R --noconfirm jq
+      fedora: sudo dnf remove -y jq
+      suse: sudo zypper remove -y jq
+      brew: brew uninstall jq
+    check: jq --version
+    description: "JSON processor"
+    enabled: true
+    required: false
+
+  # =====================================================================
+  # CLI TOOLS: LAZYGIT
+  # =====================================================================
+  - name: lazygit
+    category: tools
+    install:
+      all: curl -sSL https://raw.githubusercontent.com/jesseduffield/lazygit/master/scripts/install.sh | sh
+    uninstall:
+      all: rm -f ~/.local/bin/lazygit
+    check: lazygit --version
+    description: "Git TUI"
+    enabled: true
+    required: false
+    source_url: https://github.com/jesseduffield/lazygit
+
+  # =====================================================================
+  # CLI TOOLS: DIRENV
+  # =====================================================================
+  - name: direnv
+    category: tools
+    install:
+      debian: sudo apt-get install -y direnv
+      arch: sudo pacman -S --noconfirm direnv
+      fedora: sudo dnf install -y direnv
+      suse: sudo zypper install -y direnv
+      brew: brew install direnv
+    uninstall:
+      debian: sudo apt-get remove -y direnv
+      arch: sudo pacman -R --noconfirm direnv
+      fedora: sudo dnf remove -y direnv
+      suse: sudo zypper remove -y direnv
+      brew: brew uninstall direnv
+    check: direnv --version
+    description: "Per-directory environment variables"
+    enabled: true
+    required: false
+    source_url: https://github.com/direnv/direnv
+
+  # =====================================================================
+  # CLI TOOLS: ZOXIDE
+  # =====================================================================
+  - name: zoxide
+    category: tools
+    install:
+      all: curl -sSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    uninstall:
+      all: rm -f ~/.local/bin/zoxide
+    check: zoxide --version
+    description: "Smarter cd command"
+    enabled: true
+    required: false
+    source_url: https://github.com/ajeetdsouza/zoxide
+
+  # =====================================================================
+  # CLI TOOLS: BOTTOM
+  # =====================================================================
+  - name: bottom
+    category: tools
+    install:
+      all: cargo install bottom --locked
+    uninstall:
+      all: cargo uninstall bottom
+    check: btm --version
+    description: "System monitor"
+    enabled: true
+    required: false
+    source_url: https://github.com/ClementTsang/bottom
+
+  # =====================================================================
+  # CLI TOOLS: GH (GitHub CLI)
+  # =====================================================================
+  - name: gh
+    category: tools
+    install:
+      debian: |
+        type -p curl >/dev/null || sudo apt-get install -y curl
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y gh
+      arch: sudo pacman -S --noconfirm github-cli
+      fedora: sudo dnf install -y gh
+      brew: brew install gh
+    uninstall:
+      debian: sudo apt-get remove -y gh
+      arch: sudo pacman -R --noconfirm github-cli
+      fedora: sudo dnf remove -y gh
+      brew: brew uninstall gh
+    check: gh --version
+    description: "GitHub CLI"
+    enabled: true
+    required: false
+    source_url: https://github.com/cli/cli
+
+  # =====================================================================
+  # CLI TOOLS: UV (Python)
+  # =====================================================================
+  - name: uv
+    category: tools
+    install:
+      all: curl -LsSf https://astral.sh/uv/install.sh | sh
+    uninstall:
+      all: rm -f ~/.local/bin/uv
+    check: uv --version
+    description: "Ultra-fast Python package manager"
+    enabled: true
+    required: false
+    source_url: https://github.com/astral-sh/uv
+
+  # =====================================================================
+  # CLI TOOLS: HTTPIE
+  # =====================================================================
+  - name: httpie
+    category: tools
+    install:
+      all: pip install httpie
+    uninstall:
+      all: pip uninstall httpie -y
+    check: http --version
+    description: "Human-friendly HTTP client"
+    enabled: true
+    required: false
+    source_url: https://github.com/httpie/httpie
+
+  # =====================================================================
+  # CLI TOOLS: YQ (YAML)
+  # =====================================================================
+  - name: yq
+    category: tools
+    install:
+      debian: |
+        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+      arch: yay -S --noconfirm yq
+      fedora: sudo dnf install -y yq
+      brew: brew install yq
+    uninstall:
+      debian: sudo rm -f /usr/local/bin/yq
+      arch: sudo pacman -R --noconfirm yq
+      fedora: sudo dnf remove -y yq
+      brew: brew uninstall yq
+    check: yq --version
+    description: "YAML processor"
+    enabled: true
+    required: false
+    source_url: https://github.com/mikefarah/yq
+
+  # =====================================================================
+  # FONTS
+  # =====================================================================
+  - name: hack-nerd-fonts
+    category: fonts
+    install:
+      all: |
+        mkdir -p ~/.local/share/fonts
+        curl -fLo ~/.local/share/fonts/Hack.zip https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/Hack/HackNerdFont.zip
+        unzip -o ~/.local/share/fonts/Hack.zip -d ~/.local/share/fonts/
+        rm -f ~/.local/share/fonts/Hack.zip
+        fc-cache -f ~/.local/share/fonts
+    uninstall:
+      all: rm -rf ~/.local/share/fonts/Hack*
+    check: fc-list | grep -qi hack
+    description: "Hack Nerd Font"
+    enabled: true
+    required: false
+    source_url: https://github.com/ryanoasis/nerd-fonts
+
+  # =====================================================================
+  # ZSH PLUGINS
+  # =====================================================================
+  - name: zsh-autosuggestions
+    category: shell
+    depends_on: [oh-my-zsh]
+    install:
+      all: git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    uninstall:
+      all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    check: test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    description: "Fish-like autosuggestions for zsh"
+    enabled: true
+    required: false
+    source_url: https://github.com/zsh-users/zsh-autosuggestions
+
+  - name: zsh-syntax-highlighting
+    category: shell
+    depends_on: [oh-my-zsh]
+    install:
+      all: git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    uninstall:
+      all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    check: test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    description: "Fish-like syntax highlighting for zsh"
+    enabled: true
+    required: false
+    source_url: https://github.com/zsh-users/zsh-syntax-highlighting
+
+  # =====================================================================
+  # DOCKER FILES
+  # =====================================================================
+  - name: docker-filemanager
+    category: container
+    depends_on: [docker]
+    install:
+      all: |
+        docker volume create portainer_data
+        docker run -d --name portainer -p 9443:9443 --restart=always \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v portainer_data:/data \
+          portainer/portainer-ce:latest
+    uninstall:
+      all: docker stop portainer && docker rm portainer && docker volume rm portainer_data
+    check: docker ps --filter name=portainer
+    description: "Portainer Docker UI"
+    enabled: false
+    required: false
+    source_url: https://github.com/portainer/portainer

@@ -1,0 +1,51 @@
+# Enable Powerlevel10k instant prompt.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# p10k config
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# SSH agent
+if [[ -z "${SSH_CONNECTION}" ]]; then
+    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+fi
+
+# Mise - Polyglot version manager (replaces rvm, volta, nvm)
+export MISE_HOME="$HOME/.local/share/mise"
+export PATH="$MISE_HOME/shims:$PATH"
+
+# Android SDK
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+
+# PostgreSQL
+export PATH="/opt/pgsql-16/bin:$PATH"
+
+# Bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Turso
+export PATH="$PATH:$HOME/.turso"
+
+# opencode
+export PATH="$HOME/.opencode/bin:$PATH"
+
+# Local bin
+export PATH="$PATH:$HOME/.local/bin"
+
+# Python pip
+export PATH="$PATH:$HOME/.local/bin"
+
+# Linuxbrew
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
+
+# Aliases
+alias vim="nvim"
+
+# Disable correction
+unsetopt correct_all
+unsetopt correct

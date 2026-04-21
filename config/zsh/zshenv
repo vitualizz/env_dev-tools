@@ -1,0 +1,13 @@
+# Mise - Polyglot version manager
+export MISE_HOME="$HOME/.local/share/mise"
+export PATH="$MISE_HOME/shims:$PATH"
+
+# Volta (legacy - consider removing)
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
+
+# Android SDK
+export ANDROID_HOME=$HOME/Android/Sdk
+
+# Bun
+export BUN_INSTALL="$HOME/.bun"

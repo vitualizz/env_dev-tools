@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: envsetup
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/app
+    environment:
+      - ENVSETUP_CONFIG=/app/config/tools.yaml
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: envsetup-test
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["go", "test", "./...", "-v"]
+
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: envsetup-shell
+    stdin_open: true
+    tty: true
+    entrypoint: ["/bin/sh"]
