@@ -27,7 +27,7 @@ func main() {
 	app := components.NewApp(repo, installer, i18n)
 
 	p := tea.NewProgram(app, tea.WithAltScreen())
-	if err := p.Start(); err != nil {
+	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error running app: %v\n", err)
 		os.Exit(1)
 	}

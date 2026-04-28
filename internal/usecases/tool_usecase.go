@@ -166,7 +166,7 @@ func (uc *BatchInstallUseCase) installWithDeps(tool *entities.Tool, done []*enti
 
 		depInstalled, _ := uc.installer.IsInstalled(dep)
 		if !depInstalled {
-			uc.installer.Install(dep)
+			_, _ = uc.installer.Install(dep)
 		}
 	}
 

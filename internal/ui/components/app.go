@@ -573,10 +573,6 @@ func (a *App) getToolDescription(toolName string) string {
 
 func (a *App) progressView() string {
 	current := a.model.GetCurrentProgressTool()
-	toolName := current.Name
-	if toolName == "" {
-		toolName = "..."
-	}
 
 	percent := 0
 	if len(a.model.ProgressTools) > 0 {
@@ -698,8 +694,6 @@ type installCompleteMsg struct {
 	results []*entities.InstallResult
 }
 
-type errMsg struct {
-	err error
-}
+type errMsg struct{}
 
 var _ tea.Model = (*App)(nil)

@@ -2,8 +2,9 @@ package config
 
 import (
 	"os"
-	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
 	"github.com/vitualizz/envsetup/internal/domain/entities"
@@ -353,7 +354,7 @@ func (r *ToolRepository) GetPackages() []interfaces.Package {
 		if cat == entities.CategoryFonts {
 			pkgs = append(pkgs, interfaces.Package{
 				Name:             string(cat),
-				Label:            strings.Title(string(cat)),
+				Label:            cases.Title(language.Und).String(string(cat)),
 				Icon:             icons[cat],
 				Description:      descriptions[cat],
 				Tools:            tools,
@@ -365,7 +366,7 @@ func (r *ToolRepository) GetPackages() []interfaces.Package {
 
 		pkgs = append(pkgs, interfaces.Package{
 			Name:             string(cat),
-			Label:            strings.Title(string(cat)),
+			Label:            cases.Title(language.Und).String(string(cat)),
 			Icon:             icons[cat],
 			Description:      descriptions[cat],
 			Tools:            tools,

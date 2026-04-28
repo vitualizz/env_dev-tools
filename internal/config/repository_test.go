@@ -102,7 +102,9 @@ func TestNewToolRepository_InvalidPath(t *testing.T) {
 func TestNewToolRepository_InvalidYAML(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tools.yaml")
-	os.WriteFile(path, []byte("this: is: invalid: yaml: {{{"), 0644)
+	if err := os.WriteFile(path, []byte("this: is: invalid: yaml: {{{"), 0644); err != nil {
+		t.Fatalf("failed to write test yaml: %v", err)
+	}
 
 	_, err := config.NewToolRepository(path)
 	if err == nil {
