@@ -2,10 +2,12 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/vitualizz/envsetup/internal/domain/entities"
+	"github.com/vitualizz/envsetup/internal/domain/interfaces"
 )
 
 // =============================================================================
@@ -304,10 +306,78 @@ func (r *ToolRepository) GetThemeByName(name string) *entities.Theme {
 	return nil
 }
 
-// =============================================================================
-// Helpers
-// =============================================================================
+// GetPackages devuelve herramientas agrupadas como paquetes.
+func (r *ToolRepository) GetPackages() []interfaces.Package {
+	order := []entities.Category{
+		entities.CategoryTerminal,
+		entities.CategoryShell,
+		entities.CategoryEditor,
+		entities.CategoryTools,
+		entities.CategoryContainer,
+		entities.CategoryFonts,
+	}
 
+	icons := map[entities.Category]string{
+		entities.CategoryTerminal:   "🖥️",
+		entities.CategoryShell:       "🐚",
+		entities.CategoryEditor:   "📝",
+		entities.CategoryTools:     "🛠️",
+		entities.CategoryContainer:  "📦",
+		entities.CategoryFonts:      "🔤",
+	}
+
+	descriptions := map[entities.Category]string{
+		entities.CategoryTerminal:   "Kitty + Tokyo Night",
+		entities.CategoryShell:       "Zsh + Oh My Zsh + Powerlevel10k + Starship",
+		entities.CategoryEditor:   "Neovim",
+		entities.CategoryTools:     "fzf · bat · eza · yazi · jq · lazygit · gh · uv",
+		entities.CategoryContainer:  "Docker + Docker Compose",
+		entities.CategoryFonts:      "Hack Nerd Font",
+	}
+
+	byCategory := make(map[entities.Category][]entities.Tool)
+	for _, t := range r.tools {
+		if !t.IsBundle() {
+			byCategory[t.Category] = append(byCategory[t.Category], t)
+		}
+	}
+
+	var pkgs []interfaces.Package
+	for _, cat := range order {
+		tools, ok := byCategory[cat]
+		if !ok || len(tools) == 0 {
+			continue
+		}
+
+		// Fuentes: se instala por defecto pero NO se muestra en la UI
+		if cat == entities.CategoryFonts {
+			pkgs = append(pkgs, interfaces.Package{
+				Name:             string(cat),
+				Label:            strings.Title(string(cat)),
+				Icon:             icons[cat],
+				Description:      descriptions[cat],
+				Tools:            tools,
+				DefaultSelected:   true,
+				Selected:        true,
+			})
+			continue
+		}
+
+		pkgs = append(pkgs, interfaces.Package{
+			Name:             string(cat),
+			Label:            strings.Title(string(cat)),
+			Icon:             icons[cat],
+			Description:      descriptions[cat],
+			Tools:            tools,
+			DefaultSelected:   false,
+			Selected:        false,
+		})
+	}
+
+	return pkgs
+}
+
+// slicesContains checks if a slice contains a value.
 func slicesContains[T comparable](s []T, v T) bool {
 	for _, e := range s {
 		if e == v {

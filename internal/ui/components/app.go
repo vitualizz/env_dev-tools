@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -14,29 +15,27 @@ import (
 
 type App struct {
 	model        *models.AppModel
-	repo         interfaces.ToolRepository
-	listTools    *usecases.ListToolsUseCase
-	installTool  *usecases.InstallToolUseCase
+	repo        interfaces.ToolRepository
+	installer   interfaces.InstallerPort
 	batchInstall *usecases.BatchInstallUseCase
 	checkStatus  *usecases.BatchCheckStatusUseCase
-	i18n         *locales.I18nSimple
+	i18n        *locales.I18nSimple
 }
 
 func NewApp(repo interfaces.ToolRepository, installer interfaces.InstallerPort, i18n *locales.I18nSimple) *App {
 	return &App{
 		model:        models.NewAppModel(),
-		repo:         repo,
-		listTools:    usecases.NewListToolsUseCase(repo),
-		installTool:  usecases.NewInstallToolUseCase(installer, repo),
+		repo:        repo,
+		installer:   installer,
 		batchInstall: usecases.NewBatchInstallUseCase(installer, repo),
 		checkStatus:  usecases.NewBatchCheckStatusUseCase(installer),
-		i18n:         i18n,
+		i18n:        i18n,
 	}
 }
 
 func (a *App) Init() tea.Cmd {
-	tools := a.listTools.GetMainTools()
-	a.model.SetTools(tools)
+	pkgs := a.repo.GetPackages()
+	a.model.SetPackages(pkgs)
 	return nil
 }
 
@@ -49,6 +48,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case statusCheckCompleteMsg:
 		a.model.ToolStatus = msg.status
 		a.model.StatusChecked = true
+		return a, nil
+	case progressUpdateMsg:
+		a.model.UpdateProgress(msg.tool, msg.success, msg.message)
+		if a.model.IsProgressDone() {
+			a.model.IsLoading = false
+			a.model.ViewState = models.StateThanks
+		} else {
+			return a, a.installNext()
+		}
 		return a, nil
 	case installCompleteMsg:
 		a.model.ViewState = models.StateMainMenu
@@ -67,7 +75,18 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a *App) handleKey(key string) (tea.Model, tea.Cmd) {
-	if a.model.IsLoading {
+	// En cualquier estado, q/ctrl+c sale
+	if key == "q" || key == "ctrl+c" {
+		return a, tea.Quit
+	}
+
+	// En progreso, solo Esc para salir
+	if a.model.ViewState == models.StateProgress && key == "esc" {
+		a.model.ViewState = models.StateMainMenu
+		return a, nil
+	}
+
+	if a.model.IsLoading && a.model.ViewState != models.StateProgress {
 		return a, nil
 	}
 
@@ -78,17 +97,42 @@ func (a *App) handleKey(key string) (tea.Model, tea.Cmd) {
 		return a.handleThemeSelect(key)
 	case models.StateMainMenu:
 		return a.handleMainMenu(key)
-	case models.StateToolList:
-		return a.handleToolList(key)
+	case models.StatePackageSelect:
+		return a.handlePackageSelect(key)
+	case models.StateThanks:
+		return a.handleThanks(key)
+	case models.StateProgress:
+		// En progreso, solo mostrar
+		return a, nil
 	case models.StateSettings:
 		return a.handleSettings(key)
-	case models.StateAbout:
+case models.StateAbout:
 		if key == "esc" {
 			a.model.ViewState = models.StateMainMenu
 		}
 	}
 	return a, nil
 }
+
+// =============================================================================
+// Thanks (post-install)
+// =============================================================================
+
+func (a *App) handleThanks(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "l":
+		a.model.ShowLog = !a.model.ShowLog
+	case "enter", " ", "esc", "q", "ctrl+c":
+		return a, tea.Quit
+	}
+	return a, nil
+}
+
+// =============================================================================
+// Package Selection
+// =============================================================================
+// Language
+// =============================================================================
 
 func (a *App) handleLanguageSelect(key string) (tea.Model, tea.Cmd) {
 	switch key {
@@ -110,10 +154,13 @@ func (a *App) handleLanguageSelect(key string) (tea.Model, tea.Cmd) {
 		}
 		a.model.SettingsChoice = 0
 		a.model.ViewState = models.StateThemeSelect
-		return a, nil
 	}
 	return a, nil
 }
+
+// =============================================================================
+// Theme
+// =============================================================================
 
 func (a *App) handleThemeSelect(key string) (tea.Model, tea.Cmd) {
 	themes := a.repo.GetThemes()
@@ -134,14 +181,18 @@ func (a *App) handleThemeSelect(key string) (tea.Model, tea.Cmd) {
 		}
 		a.model.ToolChoice = 0
 		a.model.ViewState = models.StateMainMenu
-		tools := a.listTools.GetMainTools()
-		a.model.SetTools(tools)
+		pkgs := a.repo.GetPackages()
+		a.model.SetPackages(pkgs)
 	case "esc":
 		a.model.SettingsChoice = 0
 		a.model.ViewState = models.StateLanguageSelect
 	}
 	return a, nil
 }
+
+// =============================================================================
+// Main Menu
+// =============================================================================
 
 func (a *App) handleMainMenu(key string) (tea.Model, tea.Cmd) {
 	switch key {
@@ -156,7 +207,8 @@ func (a *App) handleMainMenu(key string) (tea.Model, tea.Cmd) {
 	case "enter":
 		switch a.model.MainMenuChoice {
 		case 0:
-			a.model.ViewState = models.StateToolList
+			a.model.ViewState = models.StatePackageSelect
+			a.model.SelectedIdx = 0
 			a.model.StatusChecked = false
 			return a, a.runStatusCheck()
 		case 1:
@@ -166,43 +218,96 @@ func (a *App) handleMainMenu(key string) (tea.Model, tea.Cmd) {
 		case 3:
 			return a, tea.Quit
 		}
-	case "q", "ctrl+c":
-		return a, tea.Quit
 	}
 	return a, nil
 }
 
-func (a *App) handleToolList(key string) (tea.Model, tea.Cmd) {
-	filteredTools := a.model.GetFilteredTools()
-	maxChoice := len(filteredTools) - 1
+// =============================================================================
+// Package Selection
+// =============================================================================
+
+func (a *App) handlePackageSelect(key string) (tea.Model, tea.Cmd) {
+	// Solo paquetes visibles (sin Fuentes)
+	var visible []interfaces.Package
+	for _, pkg := range a.model.Packages {
+		if pkg.Name != "fonts" {
+			visible = append(visible, pkg)
+		}
+	}
+	maxChoice := len(visible) - 1
 
 	switch key {
 	case "up":
-		if a.model.ToolChoice > 0 {
-			a.model.ToolChoice--
+		if a.model.SelectedIdx > 0 {
+			a.model.SelectedIdx--
 		}
 	case "down":
-		if a.model.ToolChoice < maxChoice {
-			a.model.ToolChoice++
+		if a.model.SelectedIdx < maxChoice {
+			a.model.SelectedIdx++
 		}
+	case "a": // seleccionar todo (incluye Fonts implícito)
+		a.model.SelectAll()
+	case "A": // deseleccionar todo
+		a.model.DeselectAll()
 	case " ":
-		if len(filteredTools) > 0 {
-			tool := filteredTools[a.model.ToolChoice]
-			a.model.ToggleToolSelection(tool.Name)
+		if len(visible) > 0 {
+			// Mapear índice visible a índice real en Packages
+			realIdx := a.visibleToRealIdx(a.model.SelectedIdx)
+			a.model.TogglePackageSelection(realIdx)
 		}
-	case "enter":
-		selected := a.model.GetSelectedToolsList()
-		if len(selected) > 0 {
+	case "enter", "c": // Continuar
+		selectedPkgs := a.model.GetSelectedPackages()
+		if len(selectedPkgs) > 0 {
+			tools := a.model.GetSelectedTools()
+			a.model.StartProgress(tools)
 			a.model.IsLoading = true
-			a.model.LoadingMessage = a.i18n.T("installing")
-			return a, a.executeInstall(selected)
+			return a, a.installNext()
 		}
 	case "esc":
 		a.model.ViewState = models.StateMainMenu
-		a.model.FilterQuery = ""
 	}
 	return a, nil
 }
+
+// visibleToRealIdx convierte índice visible a índice real en Packages.
+func (a *App) visibleToRealIdx(visibleIdx int) int {
+	vis := 0
+	for i, pkg := range a.model.Packages {
+		if pkg.Name != "fonts" {
+			if vis == visibleIdx {
+				return i
+			}
+			vis++
+		}
+	}
+	return visibleIdx
+}
+
+// =============================================================================
+// Progress (instalación paso a paso)
+// =============================================================================
+
+func (a *App) installNext() tea.Cmd {
+	tool := a.model.GetCurrentProgressTool()
+	toolPtr := &tool
+	return func() tea.Msg {
+		// Verificar si ya está instalado
+		installed, _ := a.installer.IsInstalled(toolPtr)
+		if installed {
+			return progressUpdateMsg{tool: tool, success: true, message: "already installed"}
+		}
+		// Instalar
+		result, err := a.installer.Install(toolPtr)
+		if err != nil {
+			return progressUpdateMsg{tool: tool, success: false, message: err.Error()}
+		}
+		return progressUpdateMsg{tool: tool, success: result.Success, message: result.Message}
+	}
+}
+
+// =============================================================================
+// Settings
+// =============================================================================
 
 func (a *App) handleSettings(key string) (tea.Model, tea.Cmd) {
 	switch key {
@@ -236,23 +341,21 @@ func (a *App) handleSettings(key string) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
+// =============================================================================
+// Background Tasks
+// =============================================================================
+
 func (a *App) runStatusCheck() tea.Cmd {
 	return func() tea.Msg {
-		status := a.checkStatus.Execute(a.model.Tools)
+		allTools := a.repo.GetAll()
+		status := a.checkStatus.Execute(allTools)
 		return statusCheckCompleteMsg{status: status}
 	}
 }
 
-func (a *App) executeInstall(tools []entities.Tool) tea.Cmd {
-	return func() tea.Msg {
-		toolsPtr := make([]*entities.Tool, len(tools))
-		for i := range tools {
-			toolsPtr[i] = &tools[i]
-		}
-		results := a.batchInstall.Execute(toolsPtr)
-		return installCompleteMsg{results}
-	}
-}
+// =============================================================================
+// View
+// =============================================================================
 
 func (a *App) View() string {
 	switch a.model.ViewState {
@@ -262,10 +365,12 @@ func (a *App) View() string {
 		return a.themeSelectView()
 	case models.StateMainMenu:
 		return a.mainMenuView()
-	case models.StateToolList:
-		return a.toolListView()
-	case models.StateInstalling:
-		return a.loadingView()
+	case models.StatePackageSelect:
+		return a.packageSelectView()
+	case models.StateThanks:
+		return a.thanksView()
+	case models.StateProgress:
+		return a.progressView()
 	case models.StateSettings:
 		return a.settingsView()
 	case models.StateAbout:
@@ -283,8 +388,7 @@ func (a *App) languageSelectView() string {
 		{"en", "English"},
 	}
 
-	output := headerView(a.i18n.T("language")) + "\n\n"
-
+	output := headerView("Vitualizz Space - Idioma") + "\n\n"
 	for i, lang := range languages {
 		if i == a.model.SettingsChoice {
 			output += selectedView("► " + lang.name) + "\n"
@@ -292,15 +396,13 @@ func (a *App) languageSelectView() string {
 			output += unselectedView("  " + lang.name) + "\n"
 		}
 	}
-
 	output += "\n" + footerView("↑↓: " + a.i18n.T("select_option") + " | Enter: " + a.i18n.T("confirm"))
 	return output
 }
 
 func (a *App) themeSelectView() string {
 	themes := a.repo.GetThemes()
-
-	output := headerView(a.i18n.T("select_category")) + "\n\n"
+	output := headerView("Vitualizz Space - Themes") + "\n\n"
 
 	if len(themes) == 0 {
 		output += warningView(a.i18n.T("no_tools_found"))
@@ -314,7 +416,6 @@ func (a *App) themeSelectView() string {
 			output += unselectedView("  " + theme.DisplayName) + "\n"
 		}
 	}
-
 	output += "\n" + footerView("↑↓: " + a.i18n.T("select_option") + " | Enter: " + a.i18n.T("confirm") + " | Esc: " + a.i18n.T("back"))
 	return output
 }
@@ -327,13 +428,8 @@ func (a *App) mainMenuView() string {
 		"🚪 " + a.i18n.T("exit"),
 	}
 
-	themeName := a.model.CurrentTheme
-	if themeName == "" {
-		themeName = "Nord"
-	}
-
-	output := headerView(a.i18n.T("welcome") + " - "+ themeName) + "\n\n"
-
+	output := headerView("Vitualizz Space") + "\n"
+	output += toolDescView("github.com/vitualizz · vitualizz.vercel.app") + "\n\n"
 	for i, item := range items {
 		if i == a.model.MainMenuChoice {
 			output += selectedView("► " + item) + "\n"
@@ -341,76 +437,221 @@ func (a *App) mainMenuView() string {
 			output += unselectedView("  " + item) + "\n"
 		}
 	}
-
 	output += "\n" + footerView("↑↓: " + a.i18n.T("select_option") + " | Enter: " + a.i18n.T("confirm"))
 	return output
 }
 
-func (a *App) toolListView() string {
-	output := headerView(a.i18n.T("select_tools")) + "\n\n"
+func (a *App) packageSelectView() string {
+	// Filtrar: no mostrar Fuentes en la lista (se instala por defecto)
+	var visiblePkgs []interfaces.Package
+	for _, pkg := range a.model.Packages {
+		if pkg.Name != "fonts" {
+			visiblePkgs = append(visiblePkgs, pkg)
+		}
+	}
 
-	filteredTools := a.model.GetFilteredTools()
+	output := headerView("Vitualizz Space") + "\n"
+	output += toolDescView("github.com/vitualizz · vitualizz.vercel.app") + "\n\n"
+	output += warningView("🔤 "+a.i18n.T("fonts")+": "+a.i18n.T("enabled")+"\n")
 
-	if len(filteredTools) == 0 {
+	if len(visiblePkgs) == 0 {
 		return output + warningView(a.i18n.T("no_tools_found"))
 	}
 
-	for i, tool := range filteredTools {
-		selected := a.model.IsToolSelected(tool.Name)
+	// Adjust cursor si se fue al final
+	if a.model.SelectedIdx >= len(visiblePkgs) {
+		a.model.SelectedIdx = len(visiblePkgs) - 1
+	}
+
+	for i, pkg := range visiblePkgs {
+		selected := pkg.Selected
 		checkbox := "[ ]"
 		if selected {
 			checkbox = "[✓]"
 		}
 
-		var status string
-		if !a.model.StatusChecked {
-			status = toolDescView("⟳ " + a.i18n.T("checking"))
-		} else if a.model.ToolStatus[tool.Name] {
-			status = successView("● " + a.i18n.T("installed"))
-		} else {
-			status = notInstalledView("○ " + a.i18n.T("not_installed"))
-		}
+		suffix := fmt.Sprintf(" (%d)", len(pkg.Tools))
+		label := pkg.Icon + " " + pkg.Label + suffix
 
-		if i == a.model.ToolChoice {
-			if selected {
-				output += selectedView("► "+checkbox+" ") + toolNameView(tool.Name) + " " + status + "\n"
-			} else {
-				output += selectedView("► "+checkbox+" ") + toolNameView(tool.Name) + " " + status + "\n"
+		if i == a.model.SelectedIdx {
+			output += selectedView("► "+checkbox+" ") + toolNameView(label) + "\n"
+			// Descripción del paquete
+			output += toolDescView("   "+pkg.Description) + "\n"
+			// Lista de descripciones de tools
+			var descs []string
+			for _, t := range pkg.Tools {
+				descs = append(descs, a.getToolDescription(t.Name))
 			}
-			if tool.Description != "" {
-				output += toolDescView("   " + tool.Description) + "\n"
-			}
+			output += toolDescView("   📦 "+strings.Join(descs, " · ")) + "\n"
 		} else {
 			if selected {
-				output += successView("  "+checkbox+" ") + toolNameView(tool.Name) + " " + status + "\n"
+				output += successView("  "+checkbox+" ") + label + "\n"
 			} else {
-				output += unselectedView("  "+checkbox+" ") + toolNameView(tool.Name) + " " + status + "\n"
+				output += unselectedView("  "+checkbox+" ") + label + "\n"
 			}
 		}
 	}
 
-	selectedCount := len(a.model.GetSelectedToolsList())
-	footer := fmt.Sprintf("%s: %d | ↑↓: %s | Space: %s | Enter: %s | Esc: %s",
-		a.i18n.T("total"), selectedCount, a.i18n.T("select_option"), a.i18n.T("select_tools"), a.i18n.T("install_all"), a.i18n.T("back"))
+	// Contar packages seleccionados (incluyendo Fonts implícito)
+	selectedCount := len(a.model.GetSelectedPackages())
+	footer := fmt.Sprintf("%s: %d | ↑↓: %s | Space: %s | A: all | Enter: %s | Esc: %s",
+		a.i18n.T("total"), selectedCount, a.i18n.T("select_option"), a.i18n.T("select_tools"), a.i18n.T("continue"), a.i18n.T("back"))
 
 	output += "\n" + footerView(footer)
 	return output
 }
 
-func (a *App) settingsView() string {
-	themeName := a.model.CurrentTheme
-	if themeName == "" {
-		themeName = "Nord"
+func (a *App) thanksView() string {
+	total, success, failed := a.model.GetProgressStats()
+
+	output := headerView("✓ "+a.i18n.T("completed")) + "\n\n"
+	output += toolDescView("github.com/vitualizz") + "\n"
+	output += toolDescView("vitualizz.vercel.app") + "\n\n"
+
+	output += fmt.Sprintf("%s: %d | ", toolNameView("Total"), total)
+	output += fmt.Sprintf("%s: %d", successView("✓"), success)
+	if failed > 0 {
+		output += fmt.Sprintf(" | %s: %d\n\n", errorView("✗"), failed)
+	} else {
+		output += "\n\n"
 	}
 
+	// Mostrar éxitos
+	for _, r := range a.model.ProgressResults {
+		if r.Success {
+			desc := a.getToolDescription(r.ToolName)
+			output += successView("✓ ") + toolDescView(desc) + "\n"
+		}
+	}
+
+	// Mostrar errores
+	if failed > 0 {
+		output += "\n" + errorView("✗ "+a.i18n.T("some_errors")) + "\n"
+		for _, r := range a.model.ProgressResults {
+			if !r.Success {
+				desc := a.getToolDescription(r.ToolName)
+				output += errorView("✗ ") + toolDescView(desc)
+				if r.Message != "" && r.Message != "no install command available for distro: " {
+					output += toolDescView(" — " + r.Message)
+				}
+				output += "\n"
+			}
+		}
+
+		// Toggle log
+		toggle := "▼ "+a.i18n.T("view_log")
+		if a.model.ShowLog {
+			toggle = "▲ "+a.i18n.T("hide_log")
+		}
+		output += "\n" + footerView(toggle+" | Enter/Space/Esc/q: Salir")
+
+		// Log desplegable (errores)
+		if a.model.ShowLog {
+			output += "\n" + errorView("─── Log ───") + "\n"
+			for _, r := range a.model.ProgressResults {
+				if !r.Success && r.Message != "" && r.Message != "no install command available for distro: " {
+					output += errorView("[") + toolNameView(r.ToolName) + errorView("]\n")
+					output += toolDescView("  "+r.Message) + "\n"
+				}
+			}
+			output += errorView("────────────────") + "\n"
+		}
+	} else {
+		output += "\n" + footerView("Enter/Space/Esc/q: Salir")
+	}
+
+	return output
+}
+
+// getToolDescription busca la descripción de una tool en el repositorio.
+func (a *App) getToolDescription(toolName string) string {
+	if t := a.repo.GetByID(toolName); t != nil && t.Description != "" {
+		return t.Description
+	}
+	return toolName
+}
+
+func (a *App) progressView() string {
+	current := a.model.GetCurrentProgressTool()
+	toolName := current.Name
+	if toolName == "" {
+		toolName = "..."
+	}
+
+	percent := 0
+	if len(a.model.ProgressTools) > 0 {
+		percent = (a.model.ProgressIdx * 100) / len(a.model.ProgressTools)
+	}
+
+	barWidth := 30
+	filled := (barWidth * a.model.ProgressIdx) / len(a.model.ProgressTools)
+	if len(a.model.ProgressTools) == 0 {
+		filled = 0
+	}
+	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
+
+	output := headerView(a.i18n.T("installing")) + "\n\n"
+	output += fmt.Sprintf("  %s %d%%\n\n", bar, percent)
+
+	// Tool actual
+	if a.model.ProgressIdx < len(a.model.ProgressTools) {
+		desc := a.getToolDescription(current.Name)
+		prevStatus := a.model.ProgressStatus[current.Name]
+		if prevStatus {
+			output += successView("  ✓ " + desc + "\n")
+		} else {
+			output += errorView("  ✗ " + desc + "\n")
+		}
+		// Output del comando
+		if a.model.ProgressLastOutput != "" {
+			output += toolDescView("  "+a.model.ProgressLastOutput) + "\n"
+		}
+	}
+
+	// Últimos outputs (últimas 3 lines)
+	var recentOutputs []string
+	for i := len(a.model.ProgressResults) - 1; i >= 0 && len(recentOutputs) < 3; i-- {
+		r := a.model.ProgressResults[i]
+		if r.Message != "" && !strings.Contains(r.Message, "already installed") {
+			recentOutputs = append(recentOutputs, r.Message)
+		}
+	}
+	// Mostrar últimos outputs
+	if len(recentOutputs) > 0 {
+		output += "\n" + toolDescView("─── Output ───")
+		for _, line := range recentOutputs {
+			if len(line) > 60 {
+				line = line[:60] + "..."
+			}
+			output += "\n" + toolDescView("  "+line)
+		}
+		output += "\n" + toolDescView("────────────────")
+	}
+
+	// Stats
+	total, success, failed := a.model.GetProgressStats()
+	output += "\n"
+	output += fmt.Sprintf("  %s: %d | ", toolDescView(a.i18n.T("total")), total)
+	output += fmt.Sprintf("%s: %d | ", successView("✓"), success)
+	output += fmt.Sprintf("%s: %d\n", errorView("✗"), failed)
+
+	if a.model.IsProgressDone() {
+		output += "\n" + footerView("Enter: "+a.i18n.T("continue")+" | Esc: "+a.i18n.T("back"))
+	} else {
+		output += footerView(fmt.Sprintf("%s %d/%d...", a.i18n.T("installing"), a.model.ProgressIdx+1, total))
+	}
+
+	return output
+}
+
+func (a *App) settingsView() string {
 	items := []string{
 		"🌐 " + a.i18n.T("language") + ": " + a.model.CurrentLang,
-		"🎨 " + a.i18n.T("select_category") + ": " + themeName,
+		"🎨 " + a.i18n.T("select_category") + ": " + a.model.CurrentTheme,
 		"⬅️ " + a.i18n.T("back"),
 	}
 
-	output := headerView(a.i18n.T("settings")) + "\n\n"
-
+	output := headerView("Vitualizz Space - Configuración") + "\n\n"
 	for i, item := range items {
 		if i == a.model.SettingsChoice {
 			output += selectedView("► " + item) + "\n"
@@ -418,71 +659,39 @@ func (a *App) settingsView() string {
 			output += unselectedView("  " + item) + "\n"
 		}
 	}
-
 	output += "\n" + footerView("↑↓: " + a.i18n.T("select_option") + " | Enter: " + a.i18n.T("confirm"))
 	return output
 }
 
 func (a *App) aboutView() string {
-	themeName := a.model.CurrentTheme
-	if themeName == "" {
-		themeName = "Nord"
-	}
-
-	output := headerView(a.i18n.T("about")) + "\n\n"
-	output += toolNameView("EnvSetup") + " " + toolDescView("v1.0.0") + "\n\n"
-	output += toolDescView("Theme: " + themeName) + "\n"
-	output += toolDescView("Language: " + a.model.CurrentLang) + "\n\n"
-	output += footerView("Press Esc to "+a.i18n.T("back"))
+	output := headerView("Vitualizz Space") + "\n\n"
+	output += toolDescView("github.com/vitualizz") + "\n"
+	output += toolDescView("vitualizz.vercel.app") + "\n\n"
+	output += toolNameView("v1.0.0") + "\n\n"
+	output += footerView("Press Esc to " + a.i18n.T("back"))
 	return output
 }
 
-func (a *App) loadingView() string {
-	return headerView(a.model.LoadingMessage)
-}
+// Output helpers
+func headerView(text string) string     { return "\033[36m\033[1m" + text + "\033[0m" }
+func footerView(text string) string     { return "\033[90m" + text + "\033[0m" }
+func selectedView(text string) string  { return "\033[32m" + text + "\033[0m" }
+func unselectedView(text string) string { return "\033[90m" + text + "\033[0m" }
+func toolNameView(text string) string   { return "\033[38;5;212m" + text + "\033[0m" }
+func toolDescView(text string) string  { return "\033[38;5;245m" + text + "\033[0m" }
+func successView(text string) string   { return "\033[32m" + text + "\033[0m" }
+func errorView(text string) string     { return "\033[31m" + text + "\033[0m" }
+func warningView(text string) string    { return "\033[33m" + text + "\033[0m" }
 
-func headerView(text string) string {
-	return "\033[36m\033[1m" + text + "\033[0m"
-}
-
-func footerView(text string) string {
-	return "\033[90m" + text + "\033[0m"
-}
-
-func selectedView(text string) string {
-	return "\033[32m" + text + "\033[0m"
-}
-
-func unselectedView(text string) string {
-	return "\033[90m" + text + "\033[0m"
-}
-
-func toolNameView(text string) string {
-	return "\033[38;5;212m" + text + "\033[0m"
-}
-
-func toolDescView(text string) string {
-	return "\033[38;5;245m" + text + "\033[0m"
-}
-
-func successView(text string) string {
-	return "\033[32m" + text + "\033[0m"
-}
-
-func errorView(text string) string {
-	return "\033[31m" + text + "\033[0m"
-}
-
-func warningView(text string) string {
-	return "\033[33m" + text + "\033[0m"
-}
-
-func notInstalledView(text string) string {
-	return "\033[90m" + text + "\033[0m"
-}
-
+// Messages
 type statusCheckCompleteMsg struct {
 	status map[string]bool
+}
+
+type progressUpdateMsg struct {
+	tool     entities.Tool
+	success  bool
+	message  string
 }
 
 type installCompleteMsg struct {

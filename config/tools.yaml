@@ -6,8 +6,8 @@
 # =============================================================================
 
 themes:
-  - name: tokyonight
-    display_name: "Tokyo Night"
+  - name: vitualizz
+    display_name: "Vitualizz"
     category: theme
     colors:
       background: "0x1A1B26"
@@ -31,55 +31,6 @@ themes:
         cyan: "0x7DCFFF"
         white: "0xC0CAF5"
 
-  - name: nord
-    display_name: "Nord"
-    category: theme
-    colors:
-      background: "0x2E3440"
-      foreground: "0xD8DEE9"
-      normal:
-        black: "0x3B4252"
-        red: "0xBF616A"
-        green: "0xA3BE8C"
-        yellow: "0xEBCB8B"
-        blue: "0x81A1C1"
-        magenta: "0xB48EAD"
-        cyan: "0x88C0D0"
-        white: "0xE5E9F0"
-      bright:
-        black: "0x4C566A"
-        red: "0xBF616A"
-        green: "0xA3BE8C"
-        yellow: "0xEBCB8B"
-        blue: "0x81A1C1"
-        magenta: "0xB48EAD"
-        cyan: "0x8FBCBB"
-        white: "0xECEFF4"
-
-  - name: dracula
-    display_name: "Dracula"
-    category: theme
-    colors:
-      background: "0x282A36"
-      foreground: "0xF8F8F2"
-      normal:
-        black: "0x21222C"
-        red: "0xFF5555"
-        green: "0x50FA7B"
-        yellow: "0xF1FA8C"
-        blue: "0xBD93F9"
-        magenta: "0xFF79C6"
-        cyan: "0x8BE9FD"
-        white: "0xF8F8F2"
-      bright:
-        black: "0x6272A4"
-        red: "0xFF6E6E"
-        green: "0x69FF94"
-        yellow: "0xFFFFA5"
-        blue: "0xD6ACFF"
-        magenta: "0xFF92DF"
-        cyan: "0xA4FFFF"
-        white: "0xFFFFFF"
 
 # =============================================================================
 # Tools Definition
@@ -110,13 +61,15 @@ tools:
       debian: sudo apt-get install -y kitty
       fedora: sudo dnf install -y kitty
       suse: sudo zypper install -y kitty
-      fallback: curl -sSL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+      alpine: apk add kitty
+      brew: brew install kitty
+      fallback: curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
     uninstall:
       arch: sudo pacman -R --noconfirm kitty
       debian: sudo apt-get remove -y kitty
       fedora: sudo dnf remove -y kitty
     check: kitty --version
-    description: "Terminal emulator"
+    description: "Emulador de terminal rápido"
     enabled: true
     required: true
 
@@ -130,7 +83,7 @@ tools:
     uninstall:
       all: rm -rf ~/.config/kitty
     check: test -f ~/.config/kitty/kitty.conf
-    description: "Kitty Tokyo Night config"
+    description: "Config Tokyo Night para Kitty"
     enabled: true
     required: false
 
@@ -149,7 +102,7 @@ tools:
       arch: sudo pacman -R --noconfirm zsh
       fedora: sudo dnf remove -y zsh
     check: zsh --version
-    description: "Z shell"
+    description: "Shell Zsh"
     enabled: true
     required: true
     alternatives: [bash, fish]
@@ -162,7 +115,7 @@ tools:
     uninstall:
       all: uninstall_oh_my_zsh 2>/dev/null || rm -rf ~/.oh-my-zsh
     check: test -d ~/.oh-my-zsh
-    description: "Oh My Zsh framework"
+    description: "Framework para Zsh"
     enabled: true
     required: false
 
@@ -174,7 +127,7 @@ tools:
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/themes/powerlevel10k
     check: test -d ~/.oh-my-zsh/custom/themes/powerlevel10k
-    description: "Powerlevel10k theme"
+    description: "Tema Powerlevel10k para Zsh"
     enabled: true
     required: false
 
@@ -189,7 +142,7 @@ tools:
     uninstall:
       all: rm -f ~/.zshrc ~/.zshenv ~/.zprofile
     check: test -f ~/.zshrc
-    description: "Zsh configuration"
+    description: "Configuración personal para Zsh"
     enabled: true
     required: false
 
@@ -197,11 +150,11 @@ tools:
     category: shell
     depends_on: [zsh]
     install:
-      all: curl -sS https://starship.rs/install.sh | sh
+      all: curl -sS https://starship.rs/install.sh | sh -s -- --yes
     uninstall:
       all: rm -f ~/.local/bin/starship
     check: starship --version
-    description: "Starship prompt"
+    description: "Prompt moderno para Shell"
     enabled: true
     required: false
     source_url: https://starship.rs
@@ -215,6 +168,7 @@ tools:
       debian: sudo apt-get install -y neovim
       arch: sudo pacman -S --noconfirm neovim
       fedora: sudo dnf install -y neovim
+      alpine: apk add --no-cache neovim
       fallback: |
         curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
         sudo tar xzf nvim-linux64.tar.gz -C /opt
@@ -226,7 +180,7 @@ tools:
       fedora: sudo dnf remove -y neovim
       fallback: sudo rm -f /usr/local/bin/nvim
     check: nvim --version
-    description: "Text editor"
+    description: "Editor de texto (Neovim)"
     enabled: true
     required: true
     source_url: https://github.com/neovim/neovim
@@ -241,10 +195,25 @@ tools:
     uninstall:
       all: rm -rf ~/.local/share/mise
     check: mise --version
-    description: "Polyglot version manager (Rust, Node, Python, etc.)"
+    description: "Gestor de versiones (Rust, Node, Python)"
     enabled: true
     required: true
     source_url: https://mise.jdx.dev
+
+  # =====================================================================
+  # RUST TOOLCHAIN
+  # =====================================================================
+  - name: rustup
+    category: tools
+    install:
+      all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    uninstall:
+      all: rustup self uninstall -y
+    check: rustup --version
+    description: "Gestor de versiones de Rust y Cargo"
+    enabled: true
+    required: false
+    source_url: https://rustup.rs
 
   # =====================================================================
   # AI
@@ -256,7 +225,7 @@ tools:
     uninstall:
       all: rm -f ~/.opencode/bin/opencode
     check: opencode --version
-    description: "AI coding assistant"
+    description: "Asistente de IA para programar"
     enabled: true
     required: false
     source_url: https://opencode.ai
@@ -273,7 +242,7 @@ tools:
       arch: sudo pacman -R --noconfirm docker
       fedora: sudo dnf remove -y docker-ce
     check: docker --version
-    description: "Container platform"
+    description: "Plataforma de contenedores"
     enabled: true
     required: false
     source_url: https://docker.com
@@ -298,7 +267,7 @@ tools:
       fedora: sudo dnf remove -y docker-compose
       fallback: sudo rm -f /usr/local/bin/docker-compose
     check: docker compose version
-    description: "Docker Compose plugin"
+    description: "Plugin Docker Compose"
     enabled: true
     required: false
     source_url: https://github.com/docker/compose
@@ -315,7 +284,7 @@ tools:
     uninstall:
       all: rm -rf ~/.fzf
     check: fzf --version
-    description: "Fuzzy finder"
+    description: "Buscador difuso interactivo"
     enabled: true
     required: false
     source_url: https://github.com/junegunn/fzf
@@ -329,6 +298,7 @@ tools:
       debian: sudo apt-get install -y bat
       arch: sudo pacman -S --noconfirm bat
       fedora: sudo dnf install -y bat
+      alpine: apk add --no-cache bat
       fallback: cargo install bat
     uninstall:
       debian: sudo apt-get remove -y bat
@@ -336,7 +306,7 @@ tools:
       fedora: sudo dnf remove -y bat
       fallback: cargo uninstall bat
     check: bat --version
-    description: "Cat with syntax highlighting"
+    description: "cat con resaltado de sintaxis"
     enabled: true
     required: false
     source_url: https://github.com/sharkdp/bat
@@ -351,13 +321,14 @@ tools:
       fedora: |
         sudo rpmfusion-free=$(grep -q '^enabled=1' /etc/fedora-release && echo "--enablerepo=rpmfusion_free" || echo "")
         sudo dnf install -y eza
+      alpine: apk add --no-cache eza
       fallback: cargo install eza
     uninstall:
       arch: sudo pacman -R --noconfirm eza
       fedora: sudo dnf remove -y eza
       fallback: cargo uninstall eza
     check: eza --version
-    description: "Modern ls replacement"
+    description: "Reemplazo moderno de ls"
     enabled: true
     required: false
     source_url: https://github.com/eza-community/eza
@@ -368,11 +339,18 @@ tools:
   - name: yazi
     category: tools
     install:
+      alpine: |
+        apk add --no-cache unzip
+        curl -sSLo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-musl.zip
+        unzip -q /tmp/yazi.zip -d /tmp/yazi-tmp
+        mv /tmp/yazi-tmp/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/
+        mv /tmp/yazi-tmp/yazi-x86_64-unknown-linux-musl/ya /usr/local/bin/
+        rm -rf /tmp/yazi.zip /tmp/yazi-tmp
       all: cargo install yazi-fm --locked
     uninstall:
       all: cargo uninstall yazi-fm
     check: ya --version
-    description: "Terminal file manager"
+    description: "Gestor de archivos en terminal"
     enabled: true
     required: false
     source_url: https://github.com/sxyazi/yazi
@@ -387,6 +365,7 @@ tools:
       arch: sudo pacman -S --noconfirm jq
       fedora: sudo dnf install -y jq
       suse: sudo zypper install -y jq
+      alpine: apk add --no-cache jq
       brew: brew install jq
     uninstall:
       debian: sudo apt-get remove -y jq
@@ -395,7 +374,7 @@ tools:
       suse: sudo zypper remove -y jq
       brew: brew uninstall jq
     check: jq --version
-    description: "JSON processor"
+    description: "Procesador de JSON"
     enabled: true
     required: false
 
@@ -405,11 +384,16 @@ tools:
   - name: lazygit
     category: tools
     install:
+      alpine: |
+        LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | tr -d 'v')
+        curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+        tar xf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
+        rm /tmp/lazygit.tar.gz
       all: curl -sSL https://raw.githubusercontent.com/jesseduffield/lazygit/master/scripts/install.sh | sh
     uninstall:
       all: rm -f ~/.local/bin/lazygit
     check: lazygit --version
-    description: "Git TUI"
+    description: "UI visual para Git"
     enabled: true
     required: false
     source_url: https://github.com/jesseduffield/lazygit
@@ -424,6 +408,7 @@ tools:
       arch: sudo pacman -S --noconfirm direnv
       fedora: sudo dnf install -y direnv
       suse: sudo zypper install -y direnv
+      alpine: apk add --no-cache direnv
       brew: brew install direnv
     uninstall:
       debian: sudo apt-get remove -y direnv
@@ -432,7 +417,7 @@ tools:
       suse: sudo zypper remove -y direnv
       brew: brew uninstall direnv
     check: direnv --version
-    description: "Per-directory environment variables"
+    description: "Variables de entorno por directorio"
     enabled: true
     required: false
     source_url: https://github.com/direnv/direnv
@@ -447,7 +432,7 @@ tools:
     uninstall:
       all: rm -f ~/.local/bin/zoxide
     check: zoxide --version
-    description: "Smarter cd command"
+    description: "cd inteligente que aprende"
     enabled: true
     required: false
     source_url: https://github.com/ajeetdsouza/zoxide
@@ -458,11 +443,13 @@ tools:
   - name: bottom
     category: tools
     install:
+      alpine: |
+        curl -sSL https://github.com/ClementTsang/bottom/releases/latest/download/bottom_x86_64-unknown-linux-musl.tar.gz | tar xz -C /usr/local/bin btm
       all: cargo install bottom --locked
     uninstall:
       all: cargo uninstall bottom
     check: btm --version
-    description: "System monitor"
+    description: "Monitor del sistema"
     enabled: true
     required: false
     source_url: https://github.com/ClementTsang/bottom
@@ -481,6 +468,7 @@ tools:
         sudo apt-get install -y gh
       arch: sudo pacman -S --noconfirm github-cli
       fedora: sudo dnf install -y gh
+      alpine: apk add --no-cache github-cli
       brew: brew install gh
     uninstall:
       debian: sudo apt-get remove -y gh
@@ -488,7 +476,7 @@ tools:
       fedora: sudo dnf remove -y gh
       brew: brew uninstall gh
     check: gh --version
-    description: "GitHub CLI"
+    description: "CLI de GitHub"
     enabled: true
     required: false
     source_url: https://github.com/cli/cli
@@ -503,7 +491,7 @@ tools:
     uninstall:
       all: rm -f ~/.local/bin/uv
     check: uv --version
-    description: "Ultra-fast Python package manager"
+    description: "Gestor de paquetes Python ultrarrápido"
     enabled: true
     required: false
     source_url: https://github.com/astral-sh/uv
@@ -514,11 +502,14 @@ tools:
   - name: httpie
     category: tools
     install:
+      alpine: |
+        apk add --no-cache python3 py3-pip
+        pip3 install --break-system-packages httpie
       all: pip install httpie
     uninstall:
       all: pip uninstall httpie -y
     check: http --version
-    description: "Human-friendly HTTP client"
+    description: "Cliente HTTP amigable"
     enabled: true
     required: false
     source_url: https://github.com/httpie/httpie
@@ -534,6 +525,9 @@ tools:
         sudo chmod +x /usr/local/bin/yq
       arch: yay -S --noconfirm yq
       fedora: sudo dnf install -y yq
+      alpine: |
+        wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        chmod +x /usr/local/bin/yq
       brew: brew install yq
     uninstall:
       debian: sudo rm -f /usr/local/bin/yq
@@ -541,10 +535,261 @@ tools:
       fedora: sudo dnf remove -y yq
       brew: brew uninstall yq
     check: yq --version
-    description: "YAML processor"
+    description: "Procesador de YAML"
     enabled: true
     required: false
     source_url: https://github.com/mikefarah/yq
+
+  # =====================================================================
+  # CLI TOOLS: RIPGREP
+  # =====================================================================
+  - name: ripgrep
+    category: tools
+    install:
+      debian: sudo apt-get install -y ripgrep
+      arch: sudo pacman -S --noconfirm ripgrep
+      fedora: sudo dnf install -y ripgrep
+      alpine: apk add --no-cache ripgrep
+      brew: brew install ripgrep
+    uninstall:
+      debian: sudo apt-get remove -y ripgrep
+      arch: sudo pacman -R --noconfirm ripgrep
+      fedora: sudo dnf remove -y ripgrep
+      brew: brew uninstall ripgrep
+    check: rg --version
+    description: "Búsqueda de texto ultrarrápida (rg)"
+    enabled: true
+    required: false
+    source_url: https://github.com/BurntSushi/ripgrep
+
+  # =====================================================================
+  # CLI TOOLS: FD
+  # =====================================================================
+  - name: fd
+    category: tools
+    install:
+      debian: |
+        sudo apt-get install -y fd-find
+        sudo ln -sf $(which fdfind) /usr/local/bin/fd 2>/dev/null || true
+      arch: sudo pacman -S --noconfirm fd
+      fedora: sudo dnf install -y fd-find
+      alpine: apk add --no-cache fd
+      brew: brew install fd
+    uninstall:
+      debian: sudo apt-get remove -y fd-find
+      arch: sudo pacman -R --noconfirm fd
+      fedora: sudo dnf remove -y fd-find
+      brew: brew uninstall fd
+    check: fd --version
+    description: "Buscador de archivos moderno"
+    enabled: true
+    required: false
+    source_url: https://github.com/sharkdp/fd
+
+  # =====================================================================
+  # CLI TOOLS: SD
+  # =====================================================================
+  - name: sd
+    category: tools
+    depends_on: [rustup]
+    install:
+      all: . "$HOME/.cargo/env" && cargo install sd
+    uninstall:
+      all: . "$HOME/.cargo/env" && cargo uninstall sd
+    check: sd --version
+    description: "Reemplazo moderno de sed"
+    enabled: true
+    required: false
+    source_url: https://github.com/chmln/sd
+
+  # =====================================================================
+  # CLI TOOLS: DELTA
+  # =====================================================================
+  - name: delta
+    category: tools
+    install:
+      debian: |
+        DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+        curl -Lo /tmp/delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb"
+        sudo dpkg -i /tmp/delta.deb
+        rm /tmp/delta.deb
+      arch: sudo pacman -S --noconfirm git-delta
+      fedora: sudo dnf install -y git-delta
+      alpine: |
+        DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+        curl -sSLo /tmp/delta.tar.gz "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+        tar xf /tmp/delta.tar.gz -C /tmp
+        mv "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl/delta" /usr/local/bin/
+        rm -rf /tmp/delta.tar.gz "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl"
+      brew: brew install git-delta
+    uninstall:
+      debian: sudo dpkg -r git-delta
+      arch: sudo pacman -R --noconfirm git-delta
+      fedora: sudo dnf remove -y git-delta
+      all: rm -f /usr/local/bin/delta
+    check: delta --version
+    description: "Diff con syntax highlighting para Git"
+    enabled: true
+    required: false
+    source_url: https://github.com/dandavison/delta
+
+  # =====================================================================
+  # CLI TOOLS: DUF
+  # =====================================================================
+  - name: duf
+    category: tools
+    install:
+      debian: sudo apt-get install -y duf
+      arch: sudo pacman -S --noconfirm duf
+      fedora: sudo dnf install -y duf
+      alpine: apk add --no-cache duf
+      brew: brew install duf
+    uninstall:
+      debian: sudo apt-get remove -y duf
+      arch: sudo pacman -R --noconfirm duf
+      fedora: sudo dnf remove -y duf
+      brew: brew uninstall duf
+    check: duf --version
+    description: "Reemplazo moderno de df (uso de disco)"
+    enabled: true
+    required: false
+    source_url: https://github.com/muesli/duf
+
+  # =====================================================================
+  # CLI TOOLS: DUST
+  # =====================================================================
+  - name: dust
+    category: tools
+    install:
+      arch: sudo pacman -S --noconfirm dust
+      alpine: |
+        DUST_VERSION=$(curl -s https://api.github.com/repos/bootandy/dust/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
+        curl -sSLo /tmp/dust.tar.gz "https://github.com/bootandy/dust/releases/download/v${DUST_VERSION}/dust-v${DUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+        tar xf /tmp/dust.tar.gz -C /tmp
+        mv "/tmp/dust-v${DUST_VERSION}-x86_64-unknown-linux-musl/dust" /usr/local/bin/
+        rm -rf /tmp/dust.tar.gz "/tmp/dust-v${DUST_VERSION}-x86_64-unknown-linux-musl"
+      brew: brew install dust
+      fallback: cargo install du-dust
+    uninstall:
+      arch: sudo pacman -R --noconfirm dust
+      all: rm -f /usr/local/bin/dust
+    check: dust --version
+    description: "Reemplazo moderno de du (uso de disco por directorio)"
+    enabled: true
+    required: false
+    source_url: https://github.com/bootandy/dust
+
+  # =====================================================================
+  # CLI TOOLS: FASTFETCH
+  # =====================================================================
+  - name: fastfetch
+    category: tools
+    install:
+      debian: sudo apt-get install -y fastfetch
+      arch: sudo pacman -S --noconfirm fastfetch
+      fedora: sudo dnf install -y fastfetch
+      alpine: apk add --no-cache fastfetch
+      brew: brew install fastfetch
+    uninstall:
+      debian: sudo apt-get remove -y fastfetch
+      arch: sudo pacman -R --noconfirm fastfetch
+      fedora: sudo dnf remove -y fastfetch
+      brew: brew uninstall fastfetch
+    check: fastfetch --version
+    description: "Info del sistema con estilo (neofetch moderno)"
+    enabled: true
+    required: false
+    source_url: https://github.com/fastfetch-cli/fastfetch
+
+  # =====================================================================
+  # CLI TOOLS: BTOP
+  # =====================================================================
+  - name: btop
+    category: tools
+    install:
+      debian: sudo apt-get install -y btop
+      arch: sudo pacman -S --noconfirm btop
+      fedora: sudo dnf install -y btop
+      alpine: apk add --no-cache btop
+      brew: brew install btop
+    uninstall:
+      debian: sudo apt-get remove -y btop
+      arch: sudo pacman -R --noconfirm btop
+      fedora: sudo dnf remove -y btop
+      brew: brew uninstall btop
+    check: btop --version
+    description: "Monitor del sistema visual (dashboard estilo sci-fi)"
+    enabled: true
+    required: false
+    source_url: https://github.com/aristocratos/btop
+
+  # =====================================================================
+  # CLI TOOLS: ONEFETCH
+  # =====================================================================
+  - name: onefetch
+    category: tools
+    install:
+      arch: sudo pacman -S --noconfirm onefetch
+      alpine: |
+        ONEFETCH_VERSION=$(curl -s https://api.github.com/repos/o2sh/onefetch/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+        curl -sSLo /tmp/onefetch.tar.gz "https://github.com/o2sh/onefetch/releases/download/${ONEFETCH_VERSION}/onefetch_${ONEFETCH_VERSION}_x86_64-unknown-linux-musl.tar.gz"
+        tar xf /tmp/onefetch.tar.gz -C /usr/local/bin onefetch
+        rm /tmp/onefetch.tar.gz
+      brew: brew install onefetch
+      fallback: cargo install onefetch
+    uninstall:
+      arch: sudo pacman -R --noconfirm onefetch
+      all: rm -f /usr/local/bin/onefetch
+    check: onefetch --version
+    description: "Resumen visual del repo git (como neofetch para proyectos)"
+    enabled: true
+    required: false
+    source_url: https://github.com/o2sh/onefetch
+
+  # =====================================================================
+  # CLI TOOLS: GLOW
+  # =====================================================================
+  - name: glow
+    category: tools
+    install:
+      debian: |
+        curl -sSLo /tmp/glow.deb https://github.com/charmbracelet/glow/releases/latest/download/glow_linux_amd64.deb
+        sudo dpkg -i /tmp/glow.deb
+        rm /tmp/glow.deb
+      arch: sudo pacman -S --noconfirm glow
+      fedora: sudo dnf install -y glow
+      alpine: apk add --no-cache glow
+      brew: brew install glow
+    uninstall:
+      debian: sudo dpkg -r glow
+      arch: sudo pacman -R --noconfirm glow
+      fedora: sudo dnf remove -y glow
+      brew: brew uninstall glow
+    check: glow --version
+    description: "Markdown renderizado en la terminal"
+    enabled: true
+    required: false
+    source_url: https://github.com/charmbracelet/glow
+
+
+  # =====================================================================
+  # CLI TOOLS: TEALDEER (tldr)
+  # =====================================================================
+  - name: tealdeer
+    category: tools
+    install:
+      alpine: |
+        curl -sSLo /usr/local/bin/tldr https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-x86_64-musl
+        chmod +x /usr/local/bin/tldr
+      brew: brew install tealdeer
+      fallback: cargo install tealdeer
+    uninstall:
+      all: rm -f /usr/local/bin/tldr
+    check: tldr --version
+    description: "Man pages simplificadas (tldr)"
+    enabled: true
+    required: false
+    source_url: https://github.com/tealdeer-rs/tealdeer
 
   # =====================================================================
   # FONTS
@@ -554,14 +799,48 @@ tools:
     install:
       all: |
         mkdir -p ~/.local/share/fonts
-        curl -fLo ~/.local/share/fonts/Hack.zip https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/Hack/HackNerdFont.zip
-        unzip -o ~/.local/share/fonts/Hack.zip -d ~/.local/share/fonts/
+        curl -fLo ~/.local/share/fonts/Hack.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip
+        unzip -o ~/.local/share/fonts/Hack.zip -d ~/.local/share/fonts/Hack
         rm -f ~/.local/share/fonts/Hack.zip
-        fc-cache -f ~/.local/share/fonts
+        fc-cache -f ~/.local/share/fonts 2>/dev/null || true
     uninstall:
-      all: rm -rf ~/.local/share/fonts/Hack*
-    check: fc-list | grep -qi hack
-    description: "Hack Nerd Font"
+      all: rm -rf ~/.local/share/fonts/Hack
+    check: test -d ~/.local/share/fonts/Hack
+    description: "Fuente Hack Nerd"
+    enabled: true
+    required: false
+    source_url: https://github.com/ryanoasis/nerd-fonts
+
+  - name: jetbrains-mono-nerd-fonts
+    category: fonts
+    install:
+      all: |
+        mkdir -p ~/.local/share/fonts
+        curl -fLo ~/.local/share/fonts/JetBrainsMono.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+        unzip -o ~/.local/share/fonts/JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+        rm -f ~/.local/share/fonts/JetBrainsMono.zip
+        fc-cache -f ~/.local/share/fonts 2>/dev/null || true
+    uninstall:
+      all: rm -rf ~/.local/share/fonts/JetBrainsMono
+    check: test -d ~/.local/share/fonts/JetBrainsMono
+    description: "JetBrains Mono Nerd Font (la más popular para dev)"
+    enabled: true
+    required: false
+    source_url: https://github.com/ryanoasis/nerd-fonts
+
+  - name: firacode-nerd-fonts
+    category: fonts
+    install:
+      all: |
+        mkdir -p ~/.local/share/fonts
+        curl -fLo ~/.local/share/fonts/FiraCode.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
+        unzip -o ~/.local/share/fonts/FiraCode.zip -d ~/.local/share/fonts/FiraCode
+        rm -f ~/.local/share/fonts/FiraCode.zip
+        fc-cache -f ~/.local/share/fonts 2>/dev/null || true
+    uninstall:
+      all: rm -rf ~/.local/share/fonts/FiraCode
+    check: test -d ~/.local/share/fonts/FiraCode
+    description: "Fira Code Nerd Font (con ligaduras)"
     enabled: true
     required: false
     source_url: https://github.com/ryanoasis/nerd-fonts
@@ -577,7 +856,7 @@ tools:
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
     check: test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-    description: "Fish-like autosuggestions for zsh"
+    description: "Autosugerencias para Zsh"
     enabled: true
     required: false
     source_url: https://github.com/zsh-users/zsh-autosuggestions
@@ -590,10 +869,47 @@ tools:
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
     check: test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-    description: "Fish-like syntax highlighting for zsh"
+    description: "Resaltado de sintaxis para Zsh"
     enabled: true
     required: false
     source_url: https://github.com/zsh-users/zsh-syntax-highlighting
+
+
+  # =====================================================================
+  # SHELL: ATUIN
+  # =====================================================================
+  - name: atuin
+    category: shell
+    install:
+      all: curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+    uninstall:
+      all: rm -f ~/.local/bin/atuin
+    check: atuin --version
+    description: "Historial de shell con búsqueda fuzzy (Ctrl+R)"
+    enabled: true
+    required: false
+    source_url: https://atuin.sh
+
+  # =====================================================================
+  # DOCKER: LAZYDOCKER
+  # =====================================================================
+  - name: lazydocker
+    category: container
+    depends_on: [docker]
+    install:
+      alpine: |
+        LAZYDOCKER_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazydocker/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | tr -d 'v')
+        curl -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/latest/download/lazydocker_${LAZYDOCKER_VERSION}_Linux_x86_64.tar.gz"
+        tar xf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
+        rm /tmp/lazydocker.tar.gz
+      all: curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+    uninstall:
+      all: rm -f ~/.local/bin/lazydocker
+    check: lazydocker --version
+    description: "UI visual para Docker (TUI)"
+    enabled: true
+    required: false
+    source_url: https://github.com/jesseduffield/lazydocker
 
   # =====================================================================
   # DOCKER FILES
@@ -611,7 +927,7 @@ tools:
     uninstall:
       all: docker stop portainer && docker rm portainer && docker volume rm portainer_data
     check: docker ps --filter name=portainer
-    description: "Portainer Docker UI"
+    description: "UI web para Docker (Portainer)"
     enabled: false
     required: false
     source_url: https://github.com/portainer/portainer

@@ -1,125 +1,177 @@
 package models
 
-import (
-	"github.com/vitualizz/envsetup/internal/domain/entities"
-)
+import "github.com/vitualizz/envsetup/internal/domain/entities"
+import "github.com/vitualizz/envsetup/internal/domain/interfaces"
 
+// ViewState representa los estados de la UI.
 type ViewState int
 
 const (
 	StateLanguageSelect ViewState = iota
 	StateThemeSelect
 	StateMainMenu
-	StateToolList
+	StatePackageSelect
+	StateProgress     // pantalla de progreso
+	StateThanks     // después de instalar
 	StateInstalling
 	StateSettings
 	StateAbout
 )
 
+// AppModel es el estado de la aplicación.
 type AppModel struct {
-	ViewState       ViewState
-	Tools           []entities.Tool
-	SelectedTools   map[string]bool
-	ToolStatus      map[string]bool
-	StatusChecked   bool
-	CurrentCategory entities.Category
-	Results         []entities.InstallResult
-	CurrentLang     string
-	CurrentTheme    string
-	IsLoading       bool
-	LoadingMessage  string
-	MainMenuChoice  int
-	ToolChoice      int
-	SettingsChoice  int
-	FilterQuery     string
+	ViewState   ViewState
+	Packages   []interfaces.Package
+	SelectedIdx int
+
+	// Progreso de instalación
+	ProgressTools []entities.Tool
+	ProgressIdx  int
+	ProgressResults []entities.InstallResult
+	ProgressStatus map[string]bool // tool → éxito
+	ProgressLastOutput string      // último output del comando
+	ShowLog       bool             // mostrar log completo
+
+	// Status
+	ToolStatus map[string]bool
+	StatusChecked bool
+
+	CurrentLang  string
+	CurrentTheme string
+	IsLoading   bool
+	LoadingMessage string
+	MainMenuChoice int
+	SettingsChoice int
+	ToolChoice int
+	Results []entities.InstallResult
 }
 
+// NewAppModel crea un modelo inicial.
 func NewAppModel() *AppModel {
 	return &AppModel{
-		ViewState:       StateLanguageSelect,
-		SelectedTools:   make(map[string]bool),
-		ToolStatus:      make(map[string]bool),
-		StatusChecked:   false,
-		CurrentLang:     "es",
-		CurrentTheme:    "",
-		MainMenuChoice:  0,
-		ToolChoice:      0,
-		SettingsChoice:  0,
-		FilterQuery:     "",
-		IsLoading:       false,
+		ViewState:      StateLanguageSelect,
+		SelectedIdx:    0,
+		ToolStatus:    make(map[string]bool),
+		ProgressStatus: make(map[string]bool),
+		StatusChecked:  false,
+		CurrentLang:   "es",
+		CurrentTheme:  "vitualizz",
+		MainMenuChoice: 0,
+		SettingsChoice: 0,
+		ToolChoice:    0,
+		IsLoading:     false,
 	}
 }
 
-func (m *AppModel) SetTools(tools []entities.Tool) {
-	m.Tools = tools
+// SetPackages configura los paquetes.
+func (m *AppModel) SetPackages(pkgs []interfaces.Package) {
+	m.Packages = pkgs
 }
 
-func (m *AppModel) ToggleToolSelection(name string) {
-	if m.SelectedTools[name] {
-		delete(m.SelectedTools, name)
-	} else {
-		m.SelectedTools[name] = true
+// GetSelectedPackage devuelve el paquete actual.
+func (m *AppModel) GetSelectedPackage() *interfaces.Package {
+	if m.SelectedIdx >= 0 && m.SelectedIdx < len(m.Packages) {
+		return &m.Packages[m.SelectedIdx]
+	}
+	return nil
+}
+
+// TogglePackageSelection marca/desmarca un paquete.
+func (m *AppModel) TogglePackageSelection(idx int) {
+	if idx < 0 || idx >= len(m.Packages) {
+		return
+	}
+	m.Packages[idx].Selected = !m.Packages[idx].Selected
+}
+
+// IsPackageSelected devuelve si el paquete está seleccionado.
+func (m *AppModel) IsPackageSelected(idx int) bool {
+	if idx < 0 || idx >= len(m.Packages) {
+		return false
+	}
+	return m.Packages[idx].Selected
+}
+
+// SelectAll marca todos los paquetes.
+func (m *AppModel) SelectAll() {
+	for i := range m.Packages {
+		m.Packages[i].Selected = true
 	}
 }
 
-func (m *AppModel) IsToolSelected(name string) bool {
-	return m.SelectedTools[name]
+// DeselectAll desmarca todos los paquetes.
+func (m *AppModel) DeselectAll() {
+	for i := range m.Packages {
+		m.Packages[i].Selected = false
+	}
 }
 
-func (m *AppModel) GetSelectedToolsList() []entities.Tool {
-	var selected []entities.Tool
-	for i := range m.Tools {
-		if m.SelectedTools[m.Tools[i].Name] {
-			selected = append(selected, m.Tools[i])
+// GetSelectedPackages devuelve los paquetes seleccionados.
+func (m *AppModel) GetSelectedPackages() []interfaces.Package {
+	var selected []interfaces.Package
+	for _, pkg := range m.Packages {
+		if pkg.Selected {
+			selected = append(selected, pkg)
 		}
 	}
 	return selected
 }
 
-func (m *AppModel) GetFilteredTools() []entities.Tool {
-	if m.FilterQuery == "" {
-		return m.Tools
-	}
-	
-	var filtered []entities.Tool
-	query := m.FilterQuery
-	for _, tool := range m.Tools {
-		if containsIgnoreCase(tool.Name, query) || containsIgnoreCase(tool.Description, query) {
-			filtered = append(filtered, tool)
+// GetSelectedTools devuelve TODAS las tools de paquetes seleccionados.
+func (m *AppModel) GetSelectedTools() []entities.Tool {
+	var tools []entities.Tool
+	for _, pkg := range m.Packages {
+		if pkg.Selected {
+			tools = append(tools, pkg.Tools...)
 		}
 	}
-	return filtered
+	return tools
 }
 
-func containsIgnoreCase(s, substr string) bool {
-	s = toLower(s)
-	substr = toLower(substr)
-	return contains(s, substr)
+// StartProgress inicializa la pantalla de progreso.
+func (m *AppModel) StartProgress(tools []entities.Tool) {
+	m.ViewState = StateProgress
+	m.ProgressTools = tools
+	m.ProgressIdx = 0
+	m.ProgressResults = nil
+	m.ProgressStatus = make(map[string]bool)
 }
 
-func toLower(s string) string {
-	result := make([]byte, len(s))
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= 'A' && c <= 'Z' {
-			c += 'a' - 'A'
+// UpdateProgress actualiza el progreso de una tool.
+func (m *AppModel) UpdateProgress(tool entities.Tool, success bool, msg string) {
+	m.ProgressStatus[tool.Name] = success
+	m.ProgressResults = append(m.ProgressResults, entities.InstallResult{
+		ToolName: tool.Name,
+		Success: success,
+		Message: msg,
+	})
+	// Guardar output para mostrar en log
+	m.ProgressLastOutput = msg
+	m.ProgressIdx++
+}
+
+// GetCurrentProgressTool devuelve la tool que se está instalando.
+func (m *AppModel) GetCurrentProgressTool() entities.Tool {
+	if m.ProgressIdx < len(m.ProgressTools) {
+		return m.ProgressTools[m.ProgressIdx]
+	}
+	return entities.Tool{}
+}
+
+// IsProgressDone devuelve si terminó la instalación.
+func (m *AppModel) IsProgressDone() bool {
+	return m.ProgressIdx >= len(m.ProgressTools)
+}
+
+// GetProgressStats devuelve estadísticas.
+func (m *AppModel) GetProgressStats() (total, success, failed int) {
+	total = len(m.ProgressTools)
+	for _, r := range m.ProgressResults {
+		if r.Success {
+			success++
+		} else {
+			failed++
 		}
-		result[i] = c
 	}
-	return string(result)
-}
-
-func contains(s, substr string) bool {
-	if len(substr) == 0 {
-		return true
-	}
-	if len(s) < len(substr) {
-		return false
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return total, success, failed
 }

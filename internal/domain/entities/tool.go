@@ -50,17 +50,18 @@ func (c Category) IsValid() bool {
 type Distro string
 
 const (
-	DistroArch    Distro = "arch"
+	DistroArch     Distro = "arch"
 	DistroDebian   Distro = "debian"
 	DistroFedora   Distro = "fedora"
-	DistroSuse    Distro = "suse"
-	DistroAlpine  Distro = "alpine"
-	DistroBrew   Distro = "brew"
-	DistroAll    Distro = "all"
+	DistroSuse     Distro = "suse"
+	DistroAlpine   Distro = "alpine"
+	DistroBrew     Distro = "brew"
+	DistroAll      Distro = "all"
+	DistroFallback Distro = "fallback"
 )
 
 // DistroDetectionOrder is the order in which distros are checked for fallbacks.
-var DistroDetectionOrder = []Distro{DistroArch, DistroDebian, DistroFedora, DistroSuse, DistroAlpine, DistroBrew}
+var DistroDetectionOrder = []Distro{DistroArch, DistroDebian, DistroFedora, DistroSuse, DistroAlpine, DistroBrew, DistroFallback}
 
 // DetectDistro detects the current Linux distribution.
 func DetectDistro() Distro {

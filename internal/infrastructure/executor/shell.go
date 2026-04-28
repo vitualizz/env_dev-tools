@@ -2,6 +2,7 @@ package executor
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -112,6 +113,8 @@ func (e *ShellExecutor) Execute(cmd string) (string, error) {
 	return fmt.Sprintf("[%dms] %s", duration, stdout.String()), nil
 }
 
+const installTimeout = 10 * time.Minute
+
 func (e *ShellExecutor) ExecuteWithOutput(cmd string) (string, error) {
 	sh := "/bin/sh"
 	c := "-c"
@@ -119,9 +122,15 @@ func (e *ShellExecutor) ExecuteWithOutput(cmd string) (string, error) {
 		sh = "/bin/zsh"
 	}
 
-	command := exec.Command(sh, c, cmd)
+	ctx, cancel := context.WithTimeout(context.Background(), installTimeout)
+	defer cancel()
+
+	command := exec.CommandContext(ctx, sh, c, cmd)
 	output, err := command.CombinedOutput()
 	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return string(output), fmt.Errorf("command timed out after 10 minutes")
+		}
 		return string(output), err
 	}
 	return string(output), nil

@@ -145,18 +145,13 @@ func (uc *BatchInstallUseCase) installWithDeps(tool *entities.Tool, done []*enti
 		}
 	}
 
-	// Check if already done or installed
+	// Check if already installed or already handled in this batch
+	if alreadyDone(tool.Name, done) {
+		return &entities.InstallResult{ToolName: tool.Name, Success: true, Message: "already installed"}
+	}
 	installed, _ := uc.installer.IsInstalled(tool)
 	if installed {
-		for _, r := range done {
-			if r.ToolName == tool.Name && r.Success {
-				return &entities.InstallResult{
-					ToolName: tool.Name,
-					Success: true,
-					Message: "already installed",
-				}
-			}
-		}
+		return &entities.InstallResult{ToolName: tool.Name, Success: true, Message: "already installed"}
 	}
 
 	// Install dependencies first
