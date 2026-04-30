@@ -1,4 +1,4 @@
-module github.com/vitualizz/envsetup
+module github.com/vitualizz/vitualizz-devstack
 
 go 1.24.0
 

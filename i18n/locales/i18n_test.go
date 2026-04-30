@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vitualizz/envsetup/i18n/locales"
+	"github.com/vitualizz/vitualizz-devstack/i18n/locales"
 )
 
 func TestI18n(t *testing.T) {

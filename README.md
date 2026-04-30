@@ -1,17 +1,52 @@
-# EnvSetup
+# Vitualizz DevStack
 
-[![CI](https://github.com/vitualizz/envsetup/actions/workflows/ci.yml/badge.svg)](https://github.com/vitualizz/envsetup/actions/workflows/ci.yml)
+[![CI](https://github.com/vitualizz/vitualizz-devstack/actions/workflows/ci.yml/badge.svg)](https://github.com/vitualizz/vitualizz-devstack/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.24-blue?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-Interactive TUI installer for a terminal-first development environment — Kitty, zsh, Neovim, and 40+ hand-picked tools, cross-distro (Arch, Debian, Alpine, Fedora).
+Interactive TUI that installs and configures a complete terminal-first development environment on Linux — Kitty, zsh, Neovim, and 40+ hand-picked tools in one go.
+
+> **Platform:** Linux only. macOS, Windows, and BSD are **not supported**. This is a Linux-native DevStack — it relies on distro package managers (pacman, apt, apk, dnf) and Linux-specific tooling.
 
 ## Quick Start
 
+One command, that's it:
+
 ```bash
-git clone https://github.com/vitualizz/envsetup.git
-cd envsetup
-docker compose run app
+curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | bash
+```
+
+The installer checks for Go 1.24+ first, then falls back to Docker. No manual setup needed.
+
+### Manual Install
+
+If you prefer to clone and run yourself:
+
+```bash
+git clone https://github.com/vitualizz/vitualizz-devstack.git
+cd vitualizz-devstack
+go run ./cmd/envsetup/              # with Go
+docker compose run app              # or Docker (isolated)
+```
+
+## What Is This
+
+A **DevStack** — not a dotfiles repo, not a collection of scripts. It's an opinionated, reproducible way to go from a bare Linux install to a fully configured developer environment.
+
+```
+Language select → Theme select → Tool select → Install
+```
+
+Each tool declares install commands per distro. The installer detects your distro at runtime and picks the right command, with a fallback chain: `exact distro → all → detection order → fallback`.
+
+```yaml
+# config/tools.yaml
+- name: ripgrep
+  install:
+    arch: pacman -S ripgrep
+    debian: apt-get install -y ripgrep
+    alpine: apk add ripgrep
+    all: cargo install ripgrep   # universal fallback
 ```
 
 ## Stack
@@ -34,23 +69,14 @@ docker compose run app
 | **Fonts** | Hack, JetBrains Mono, Fira Code (Nerd Fonts) |
 | **Theme** | Vitualizz |
 
-## How It Works
+## Supported Distros
 
-```
-Language select → Theme select → Tool select → Install
-```
+- **Arch Linux** (pacman)
+- **Debian / Ubuntu** (apt)
+- **Alpine** (apk)
+- **Fedora** (dnf)
 
-Each tool declares install commands per distro. The installer detects your distro at runtime and picks the right command, with a fallback chain: `exact distro → all → detection order → fallback`.
-
-```yaml
-# config/tools.yaml
-- name: ripgrep
-  install:
-    arch: pacman -S ripgrep
-    debian: apt-get install -y ripgrep
-    alpine: apk add ripgrep
-    all: cargo install ripgrep
-```
+Other distros may work if tools fall back to the `all` (cargo/universal) install path, but are not officially tested.
 
 ## Architecture
 
@@ -76,22 +102,48 @@ config/
 i18n/             ← en/es translations
 ```
 
-## Development
+## Development Environment
+
+### Prerequisites
+
+- Go 1.24+
+- Docker & Docker Compose (optional, for isolated testing)
+
+### Run Locally
 
 ```bash
-# Run
 go run ./cmd/envsetup/
+```
 
-# Test (all packages, race detector, coverage)
+### Run Tests
+
+```bash
+# All packages with race detector and coverage
 go test -race -cover ./...
 
-# Build
-go build -o envsetup ./cmd/envsetup/
+# Verbose output
+go test -v ./...
+```
 
-# Docker (isolated environment)
-docker compose run app     # run installer
-docker compose run test    # run tests
-docker compose run shell   # debug shell
+### Docker (Isolated Environment)
+
+```bash
+# Run the DevStack installer in a container
+docker compose run app
+
+# Run all tests in a clean container
+docker compose run test
+
+# Open a debug shell inside the build environment
+docker compose run shell
+```
+
+The `app` service builds and runs the installer in an Alpine container — safe to experiment without touching your host system. The `test` service runs the full test suite in isolation.
+
+### Build
+
+```bash
+go build -o envsetup ./cmd/envsetup/
 ```
 
 ## Adding a Tool
@@ -120,6 +172,7 @@ docker compose run shell   # debug shell
 ## CI
 
 Every push to `master` and every PR runs:
+
 - `go build ./...`
 - `go test -race -cover ./...`
 - `golangci-lint`
@@ -127,3 +180,7 @@ Every push to `master` and every PR runs:
 ## License
 
 MIT
+
+---
+
+Con amor @vitualizz

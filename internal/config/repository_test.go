@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/vitualizz/envsetup/internal/config"
-	"github.com/vitualizz/envsetup/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/config"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
 )
 
 const testYAML = `

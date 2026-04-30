@@ -6,10 +6,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/vitualizz/envsetup/internal/config"
-	"github.com/vitualizz/envsetup/internal/infrastructure/installers"
-	"github.com/vitualizz/envsetup/internal/ui/components"
-	"github.com/vitualizz/envsetup/i18n/locales"
+	"github.com/vitualizz/vitualizz-devstack/internal/config"
+	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/installers"
+	"github.com/vitualizz/vitualizz-devstack/internal/ui/components"
+	"github.com/vitualizz/vitualizz-devstack/i18n/locales"
 )
 
 func main() {

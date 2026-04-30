@@ -3,7 +3,7 @@ package entities_test
 import (
 	"testing"
 
-	"github.com/vitualizz/envsetup/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
 )
 
 func TestGetInstallCmd(t *testing.T) {

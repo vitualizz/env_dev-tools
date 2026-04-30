@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/vitualizz/envsetup/internal/domain/entities"
+import "github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
 
 // ToolRepository queries tools and themes.
 type ToolRepository interface {

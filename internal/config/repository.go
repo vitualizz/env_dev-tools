@@ -7,8 +7,8 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"github.com/vitualizz/envsetup/internal/domain/entities"
-	"github.com/vitualizz/envsetup/internal/domain/interfaces"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/interfaces"
 )
 
 // =============================================================================

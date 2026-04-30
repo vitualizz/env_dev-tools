@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vitualizz/envsetup/internal/domain/entities"
-	"github.com/vitualizz/envsetup/internal/infrastructure/installers"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/installers"
 )
 
 func TestInstaller(t *testing.T) {

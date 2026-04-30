@@ -1,7 +1,7 @@
 package models
 
-import "github.com/vitualizz/envsetup/internal/domain/entities"
-import "github.com/vitualizz/envsetup/internal/domain/interfaces"
+import "github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
+import "github.com/vitualizz/vitualizz-devstack/internal/domain/interfaces"
 
 // ViewState representa los estados de la UI.
 type ViewState int

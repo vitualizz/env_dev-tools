@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"github.com/vitualizz/envsetup/internal/domain/entities"
-	"github.com/vitualizz/envsetup/internal/domain/interfaces"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/interfaces"
 )
 
 // InstallToolUseCase installs a single tool.

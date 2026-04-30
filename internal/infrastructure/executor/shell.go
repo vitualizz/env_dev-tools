@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vitualizz/envsetup/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
 )
 
 type Distro string

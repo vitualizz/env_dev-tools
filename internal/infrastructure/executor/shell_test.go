@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vitualizz/envsetup/internal/infrastructure/executor"
+	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/executor"
 )
 
 func TestExecuteWithOutput_Success(t *testing.T) {

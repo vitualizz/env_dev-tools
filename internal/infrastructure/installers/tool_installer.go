@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vitualizz/envsetup/internal/domain/entities"
-	"github.com/vitualizz/envsetup/internal/infrastructure/executor"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
+	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/executor"
 )
 
 // ToolInstaller handles installation and uninstallation of tools.

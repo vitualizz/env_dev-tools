@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vitualizz/envsetup/internal/domain/interfaces"
+	"github.com/vitualizz/vitualizz-devstack/internal/domain/interfaces"
 )
 
 type Translation struct {
