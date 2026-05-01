@@ -204,7 +204,7 @@ tools:
   - name: rustup
     category: tools
     install:
-      all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --yes
+       all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     uninstall:
       all: rustup self uninstall -y
     check: rustup --version
@@ -317,7 +317,6 @@ tools:
   - name: eza
     category: tools
     install:
-      debian: sudo apt-get install -y eza
       arch: sudo pacman -S --noconfirm eza
       fedora: |
         sudo rpmfusion-free=$(grep -q '^enabled=1' /etc/fedora-release && echo "--enablerepo=rpmfusion_free" || echo "")
@@ -338,6 +337,7 @@ tools:
   # =====================================================================
   - name: yazi
     category: tools
+    depends_on: [rustup]
     install:
       all: cargo install yazi-fm --locked
     uninstall:
@@ -376,7 +376,13 @@ tools:
   - name: lazygit
     category: tools
     install:
-      all: curl -sSL https://raw.githubusercontent.com/jesseduffield/lazygit/master/scripts/install.sh | bash
+      all: |
+        LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
+        LAZYGIT_ARCH=$(uname -m | sed -e 's/aarch64/arm64/')
+        curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_${LAZYGIT_ARCH}.tar.gz"
+        tar xf lazygit.tar.gz lazygit
+        sudo install lazygit -D -t /usr/local/bin/
+        rm -f lazygit.tar.gz
     uninstall:
       all: rm -f ~/.local/bin/lazygit
     check: lazygit --version
@@ -486,7 +492,7 @@ tools:
   - name: httpie
     category: tools
     install:
-      all: pip3 install httpie
+      all: sudo apt-get install -y python3-pip && pip3 install httpie
     uninstall:
       all: pip uninstall httpie -y
     check: http --version
@@ -630,7 +636,6 @@ tools:
   - name: dust
     category: tools
     install:
-      debian: sudo apt-get install -y dust
       arch: sudo pacman -S --noconfirm dust
       brew: brew install dust
       fallback: cargo install du-dust
@@ -696,7 +701,6 @@ tools:
   - name: onefetch
     category: tools
     install:
-      debian: sudo apt-get install -y onefetch
       arch: sudo pacman -S --noconfirm onefetch
       brew: brew install onefetch
       fallback: cargo install onefetch
