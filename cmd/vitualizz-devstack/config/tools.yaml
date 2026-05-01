@@ -57,12 +57,9 @@ tools:
   - name: kitty
     category: terminal
     install:
-      arch: sudo pacman -S --noconfirm kitty
-      debian: sudo apt-get install -y kitty
-      fedora: sudo dnf install -y kitty
-      suse: sudo zypper install -y kitty
-      brew: brew install kitty
-      fallback: curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+      all: |
+        curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+        ln -sf ~/.local/kitty.app/bin/kitty ~/.local/bin/kitty
     uninstall:
       arch: sudo pacman -R --noconfirm kitty
       debian: sudo apt-get remove -y kitty
@@ -164,14 +161,18 @@ tools:
   - name: neovim
     category: editor
     install:
-      debian: sudo apt-get install -y neovim
+      debian: |
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:neovim-ppa/stable
+        sudo apt-get update
+        sudo apt-get install -y neovim
       arch: sudo pacman -S --noconfirm neovim
       fedora: sudo dnf install -y neovim
       fallback: |
-        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
-        sudo tar xzf nvim-linux64.tar.gz -C /opt
-        sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
-        rm -f nvim-linux64.tar.gz
+        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+        sudo tar xzf nvim-linux-x86_64.tar.gz -C /opt
+        sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+        rm -f nvim-linux-x86_64.tar.gz
     uninstall:
       debian: sudo apt-get remove -y neovim
       arch: sudo pacman -R --noconfirm neovim
@@ -197,6 +198,21 @@ tools:
     enabled: true
     required: true
     source_url: https://mise.jdx.dev
+
+  # =====================================================================
+  # BUILD ESSENTIALS
+  # =====================================================================
+  - name: build-essential
+    category: tools
+    install:
+      debian: sudo apt-get install -y build-essential
+      arch: sudo pacman -S --noconfirm base-devel
+      fedora: sudo dnf groupinstall -y "Development Tools"
+      suse: sudo zypper install -y -t pattern devel_basis
+    check: gcc --version
+    description: "Build tools (gcc, g++, make) needed for cargo install"
+    enabled: true
+    required: true
 
   # =====================================================================
   # RUST TOOLCHAIN
@@ -317,10 +333,14 @@ tools:
   - name: eza
     category: tools
     install:
+      debian: |
+        sudo mkdir -p /etc/apt/keyrings
+        sudo wget -qO /etc/apt/keyrings/gierens.gpg https://deb.gierens.de/gpg.key
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/gierens.list
+        sudo apt-get update
+        sudo apt-get install -y eza
       arch: sudo pacman -S --noconfirm eza
-      fedora: |
-        sudo rpmfusion-free=$(grep -q '^enabled=1' /etc/fedora-release && echo "--enablerepo=rpmfusion_free" || echo "")
-        sudo dnf install -y eza
+      fedora: sudo dnf install -y eza
       fallback: cargo install eza
     uninstall:
       arch: sudo pacman -R --noconfirm eza
@@ -337,11 +357,11 @@ tools:
   # =====================================================================
   - name: yazi
     category: tools
-    depends_on: [rustup]
+    depends_on: [rustup, build-essential]
     install:
-      all: cargo install yazi-fm --locked
+      all: cargo install yazi-fm yazi-cli --locked
     uninstall:
-      all: cargo uninstall yazi-fm
+      all: cargo uninstall yazi-fm yazi-cli
     check: ya --version
     description: "Gestor de archivos en terminal"
     enabled: true
@@ -434,7 +454,7 @@ tools:
   # =====================================================================
   - name: bottom
     category: tools
-    depends_on: [rustup]
+    depends_on: [rustup, build-essential]
     install:
       all: cargo install bottom --locked
     uninstall:
@@ -573,7 +593,7 @@ tools:
   # =====================================================================
   - name: sd
     category: tools
-    depends_on: [rustup]
+    depends_on: [rustup, build-essential]
     install:
       fallback: . "$HOME/.cargo/env" && cargo install sd --quiet
     uninstall:
@@ -636,6 +656,10 @@ tools:
   - name: dust
     category: tools
     install:
+      debian: |
+        curl -sLo /tmp/dust.deb "https://github.com/bootandy/dust/releases/latest/download/dust_$(dpkg --print-architecture).deb"
+        sudo dpkg -i /tmp/dust.deb
+        rm -f /tmp/dust.deb
       arch: sudo pacman -S --noconfirm dust
       brew: brew install dust
       fallback: cargo install du-dust
@@ -701,6 +725,10 @@ tools:
   - name: onefetch
     category: tools
     install:
+      debian: |
+        curl -sLo /tmp/onefetch.tar.gz "https://github.com/o2sh/onefetch/releases/latest/download/onefetch-$(uname -m)-linux.tar.gz"
+        sudo tar xzf /tmp/onefetch.tar.gz -C /usr/local/bin/ onefetch
+        rm -f /tmp/onefetch.tar.gz
       arch: sudo pacman -S --noconfirm onefetch
       brew: brew install onefetch
       fallback: cargo install onefetch
@@ -744,7 +772,9 @@ tools:
   - name: tealdeer
     category: tools
     install:
-      brew: brew install tealdeer
+      debian: sudo apt-get install -y tealdeer
+      arch: sudo pacman -S --noconfirm tealdeer
+      fedora: sudo dnf install -y tealdeer
       fallback: cargo install tealdeer
     uninstall:
       all: rm -f /usr/local/bin/tldr
