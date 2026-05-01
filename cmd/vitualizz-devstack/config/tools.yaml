@@ -204,7 +204,7 @@ tools:
   - name: rustup
     category: tools
     install:
-       all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     uninstall:
       all: rustup self uninstall -y
     check: rustup --version
