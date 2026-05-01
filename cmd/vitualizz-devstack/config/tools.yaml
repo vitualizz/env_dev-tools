@@ -194,7 +194,7 @@ tools:
     install:
       alpine: |
         apk add --no-cache tar xz
-        curl -sSL https://github.com/jdx/mise/releases/latest/download/mise-latest-linux-x64.tar.gz | tar xz -C /usr/local/bin --strip-components=1
+        curl -sSL https://github.com/jdx/mise/releases/latest/download/mise-latest-linux-x64-musl.tar.gz | tar xz -C /usr/local/bin --strip-components=1
       fallback: curl https://mise.run | MISE_YES=1 sh
     uninstall:
       all: rm -rf ~/.local/share/mise
@@ -654,7 +654,12 @@ tools:
       debian: sudo apt-get install -y duf
       arch: sudo pacman -S --noconfirm duf
       fedora: sudo dnf install -y duf
-      alpine: apk add --no-cache duf
+      alpine: |
+        DUF_VERSION=$(curl -s https://api.github.com/repos/muesli/duf/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
+        curl -sSLo /tmp/duf.tar.gz "https://github.com/muesli/duf/releases/download/v${DUF_VERSION}/duf_${DUF_VERSION}_linux_x86_64.tar.gz"
+        tar xf /tmp/duf.tar.gz -C /tmp
+        mv /tmp/duf /usr/local/bin/
+        rm -rf /tmp/duf.tar.gz
       brew: brew install duf
     uninstall:
       debian: sudo apt-get remove -y duf
@@ -770,7 +775,12 @@ tools:
         rm /tmp/glow.deb
       arch: sudo pacman -S --noconfirm glow
       fedora: sudo dnf install -y glow
-      alpine: apk add --no-cache glow
+      alpine: |
+        GLOW_VERSION=$(curl -s https://api.github.com/repos/charmbracelet/glow/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
+        curl -sSLo /tmp/glow.tar.gz "https://github.com/charmbracelet/glow/releases/download/v${GLOW_VERSION}/glow_${GLOW_VERSION}_Linux_x86_64.tar.gz"
+        tar xf /tmp/glow.tar.gz -C /tmp
+        mv /tmp/glow /usr/local/bin/
+        rm -rf /tmp/glow.tar.gz
       brew: brew install glow
     uninstall:
       debian: sudo dpkg -r glow

@@ -143,6 +143,9 @@ func (i *ToolInstaller) IsInstalled(tool *entities.Tool) (bool, error) {
 		return false, nil
 	}
 
+	// Set tool name so log entries are correct (even though we skip logging checks)
+	i.exec.ToolName = tool.Name
+
 	// Don't log check commands to avoid noise
 	output, err := i.exec.ExecuteWithOutput(tool.Check)
 	if err != nil {
