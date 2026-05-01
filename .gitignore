@@ -1,5 +1,6 @@
 # Binary
 envsetup
+vitualizz-devstack
 
 # opencode runtime
 .opencode/
@@ -7,3 +8,6 @@ envsetup
 # Vagrant local state
 .vagrant/
 .vagrant.d/
+
+# GoReleaser artifacts
+dist/

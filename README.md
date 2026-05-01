@@ -10,23 +10,30 @@ Interactive TUI that installs and configures a complete terminal-first developme
 
 ## Quick Start
 
-One command, that's it:
+One command, no dependencies needed:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | sudo bash
 ```
 
-The installer checks for Go 1.24+ first, then falls back to Docker. No manual setup needed.
+The installer downloads a pre-compiled binary from the latest GitHub release. No Go, no Docker, no compilation — just runs.
 
 ### Manual Install
 
-If you prefer to clone and run yourself:
+If you prefer to build from source:
 
 ```bash
 git clone https://github.com/vitualizz/vitualizz-devstack.git
 cd vitualizz-devstack
-go run ./cmd/envsetup/              # with Go
-docker compose run app              # or Docker (isolated)
+go run ./cmd/vitualizz-devstack/     # interactive TUI
+go run ./cmd/vitualizz-devstack/ --ci  # headless mode
+```
+
+Or use Docker:
+
+```bash
+docker compose run app               # CI mode (headless)
+docker compose run app ./vitualizz-devstack --tui  # interactive
 ```
 
 ## What Is This
@@ -133,7 +140,7 @@ go test -v ./...
 docker compose run app
 
 # Run in interactive TUI mode
-docker compose run app ./envsetup --tui
+docker compose run app ./vitualizz-devstack --tui
 
 # Run all tests in a clean container
 docker compose run test
@@ -142,7 +149,7 @@ docker compose run test
 docker compose run shell
 ```
 
-The `app` service builds and runs the installer in CI mode by default — no TUI, clean output, auto-detects Docker and skips incompatible tools (kitty, docker, etc.). Use `--tui` flag for interactive mode.
+The `app` service builds and runs the installer in CI mode by default — no TUI, clean output, auto-detects Docker and skips incompatible tools (kitty, docker, etc.).
 
 ### Vagrant (Multi-Distro Testing)
 
@@ -170,13 +177,13 @@ Both VMs come with 2 vCPUs and 2GB RAM. The project root is synced to `/vagrant`
 ### Build
 
 ```bash
-go build -o envsetup ./cmd/envsetup/
+go build -o vitualizz-devstack ./cmd/vitualizz-devstack/
 
 # Run in CI mode (headless, no TUI)
-./envsetup --ci
+./vitualizz-devstack --ci
 
 # Run in TUI mode (interactive)
-./envsetup
+./vitualizz-devstack
 ```
 
 ### CI Mode
@@ -185,6 +192,21 @@ The `--ci` flag runs the installer without a TUI — designed for:
 - **Docker testing** — no TTY required, clean output
 - **CI/CD pipelines** — exit code 1 if any tool fails
 - **Quick verification** — see what installs and what doesn't
+
+## Releases
+
+Binary releases are built automatically via GitHub Actions + GoReleaser when a tag is pushed:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+This triggers the `release.yml` workflow which:
+1. Builds static binaries for `linux/amd64` and `linux/arm64`
+2. Creates a GitHub Release with changelog
+3. Uploads checksums
+
+No Go installation needed — `install.sh` downloads the pre-built binary directly.
 
 ## Adding a Tool
 

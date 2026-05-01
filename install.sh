@@ -13,8 +13,8 @@ NC='\033[0m'
 
 # --- Config ---
 REPO="vitualizz/vitualizz-devstack"
-BRANCH="main"
-RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
+INSTALL_DIR="${DEVSTACK_INSTALL_DIR:-/usr/local/bin}"
+BIN_NAME="vitualizz-devstack"
 
 info()    { echo -e "${CYAN}▸${NC} $1"; }
 success() { echo -e "${GREEN}✓${NC} $1"; }
@@ -22,15 +22,21 @@ warn()    { echo -e "${YELLOW}!${NC} $1"; }
 error()   { echo -e "${RED}✗${NC} $1" >&2; }
 fatal()   { error "$1"; exit 1; }
 
+cleanup() { rm -f "$TMP_BIN" 2>/dev/null || true; }
+trap cleanup EXIT
+
 # --- Banner ---
 echo -e "${BOLD}${CYAN}"
-echo "  __     ___     _            ____                  "
-echo "  \ \   / (_)___| |_ ___  _ __/ ___|  ___ __ _ _ __ "
-echo "   \ \ / /| / __| __/ _ \| '__\___ \ / __/ _\` | '__|"
-echo "    \ V / | \__ \ || (_) | |   ___) | (_| (_| | |   "
-echo "     \_/  |_|___/\__\___/|_|  |____/ \___\__,_|_|   "
+echo "  █▀▀ █░█ █▀▀ █░░ █▀▀ ▀█▀"
+echo "  █░░ █▀█ █▀▀ █▄▄ █▄░ ░█░"
+echo "  ▀▀▀ ▀░▀ ▀▀▀ ▀▀▀ ▀░▀ ░▀▀"
+echo ""
+echo "  ▀█▀ █▀█ █▀▀ █▀█"
+echo "  ░█░ █▀▀ █▄▄ █▀▄"
+echo "  ▀▀▀ ▀░░ ▀▀▀ ▀░▀"
+echo ""
+echo "  D e v S t a c k"
 echo -e "${NC}"
-echo -e "${BOLD}Vitualizz DevStack${NC} — Terminal-first dev environment"
 echo
 
 # --- Platform check ---
@@ -38,79 +44,95 @@ if [[ "$(uname -s)" != "Linux" ]]; then
   fatal "Vitualizz DevStack only supports Linux. macOS, Windows and BSD are not supported."
 fi
 
-# --- Temp directory ---
-TMPDIR=$(mktemp -d "/tmp/devstack.XXXXXX")
-trap 'rm -rf "$TMPDIR"' EXIT
+# --- Architecture detection ---
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)  GOARCH="x86_64" ;;
+  aarch64) GOARCH="aarch64" ;;
+  arm64)   GOARCH="aarch64" ;;
+  *)       fatal "Unsupported architecture: $ARCH (only x86_64 and aarch64 supported)" ;;
+esac
 
-clone_repo() {
-  info "Cloning ${REPO}@${BRANCH}..."
-  git clone --depth 1 --branch "$BRANCH" \
-    "https://github.com/${REPO}.git" "$TMPDIR" 2>/dev/null || \
-    fatal "Failed to clone repository. Make sure git is installed."
-  success "Repository cloned."
+TMP_BIN=$(mktemp "/tmp/${BIN_NAME}.XXXXXX")
+
+# --- Strategy: Download pre-built binary ---
+download_binary() {
+  info "Fetching latest release from ${REPO}..."
+
+  # Use GitHub API to get latest release
+  local latest_url
+  latest_url=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | \
+    grep -o '"browser_download_url": "[^"]*linux_'"${GOARCH}"'"' | \
+    head -1 | \
+    cut -d'"' -f4)
+
+  if [[ -z "$latest_url" ]]; then
+    error "No release binary found for linux/${ARCH}"
+    warn ""
+    warn "Falling back to Go build method..."
+    return 1
+  fi
+
+  local version
+  version=$(echo "$latest_url" | grep -oP 'v\K[0-9]+\.[0-9]+\.[0-9]+' || echo "latest")
+  info "Downloading Vitualizz DevStack ${version} (linux/${ARCH})..."
+
+  if ! curl -fsSL -o "$TMP_BIN" "$latest_url"; then
+    error "Download failed"
+    warn ""
+    warn "Falling back to Go build method..."
+    return 1
+  fi
+
+  chmod +x "$TMP_BIN"
+  success "Binary downloaded"
+  return 0
 }
 
-# --- Strategy 1: Go (preferred) ---
-try_go() {
+# --- Fallback: Build from source ---
+build_from_source() {
   if ! command -v go &>/dev/null; then
-    return 1
+    fatal "Go 1.24+ is required for source build. Install from https://go.dev/doc/install"
   fi
 
-  GO_VERSION=$(go version | grep -oP 'go\K[0-9]+\.[0-9]+')
-  GO_MAJOR=$(echo "$GO_VERSION" | cut -d. -f1)
-  GO_MINOR=$(echo "$GO_VERSION" | cut -d. -f2)
+  local tmpdir
+  tmpdir=$(mktemp -d "/tmp/devstack-build.XXXXXX")
+  trap 'rm -rf "$tmpdir"' EXIT
 
-  if [[ "$GO_MAJOR" -lt 1 || ("$GO_MAJOR" -eq 1 && "$GO_MINOR" -lt 24) ]]; then
-    warn "Go $GO_VERSION found, but 1.24+ is required."
-    return 1
-  fi
+  info "Cloning ${REPO}..."
+  git clone --depth 1 "https://github.com/${REPO}.git" "$tmpdir" 2>/dev/null || \
+    fatal "Failed to clone repository. Make sure git is installed."
 
-  clone_repo
-  echo
-  info "Building DevStack with Go $GO_VERSION..."
-  cd "$TMPDIR"
-  go run ./cmd/envsetup/
+  info "Building from source..."
+  cd "$tmpdir"
+  go build -o "$TMP_BIN" ./cmd/vitualizz-devstack/
+  success "Binary built"
 }
 
-# --- Strategy 2: Docker ---
-try_docker() {
-  if ! command -v docker &>/dev/null; then
-    return 1
+# --- Install ---
+install_binary() {
+  if [[ ! -w "$INSTALL_DIR" ]]; then
+    warn "Cannot write to ${INSTALL_DIR}"
+    warn "Please run with sudo: curl ... | sudo bash"
+    fatal "Permission denied"
   fi
 
-  clone_repo
-  echo
-  info "Running DevStack in Docker (CI mode)..."
-  cd "$TMPDIR"
-
-  if command -v docker-compose &>/dev/null; then
-    docker-compose run --rm app
-  elif docker compose version &>/dev/null 2>&1; then
-    docker compose run --rm app
-  else
-    fatal "Docker is installed but docker-compose is not available."
-  fi
+  cp "$TMP_BIN" "${INSTALL_DIR}/${BIN_NAME}"
+  chmod +x "${INSTALL_DIR}/${BIN_NAME}"
+  success "Installed to ${INSTALL_DIR}/${BIN_NAME}"
 }
 
-# --- Execution ---
-info "Checking prerequisites..."
-
-if try_go; then
-  echo
-  success "DevStack launched with Go."
-  exit 0
+# --- Execute ---
+if download_binary; then
+  install_binary
+else
+  build_from_source
+  install_binary
 fi
 
-if try_docker; then
-  echo
-  success "DevStack launched with Docker."
-  exit 0
-fi
-
-fatal "No suitable runtime found.
-
-Vitualizz DevStack requires one of:
-  • Go 1.24+   — https://go.dev/doc/install
-  • Docker     — https://docs.docker.com/engine/install/
-
-Install one and try again."
+echo
+success "Vitualizz DevStack is ready!"
+echo
+echo "  Run: vitualizz-devstack"
+echo "  CI:  vitualizz-devstack --ci"
+echo

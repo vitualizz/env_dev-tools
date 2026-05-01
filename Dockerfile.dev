@@ -9,4 +9,4 @@ RUN go mod download
 
 # Build and run in CI mode by default
 # Override with: docker compose run app ./envsetup --tui
-CMD ["sh", "-c", "go build -buildvcs=false -o /tmp/envsetup ./cmd/envsetup/ && /tmp/envsetup --ci"]
+CMD ["sh", "-c", "go build -buildvcs=false -o /tmp/vitualizz-devstack ./cmd/vitualizz-devstack/ && /tmp/vitualizz-devstack --ci"]
