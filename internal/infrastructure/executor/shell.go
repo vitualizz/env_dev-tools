@@ -23,6 +23,41 @@ func NewShellExecutor() *ShellExecutor {
 	return &ShellExecutor{}
 }
 
+// toolPaths returns common directories where dev tools install binaries.
+func toolPaths() string {
+	return "$HOME/.cargo/bin:$HOME/.local/bin:$HOME/.mise/bin:$HOME/go/bin:$HOME/.opencode/bin:/usr/local/bin"
+}
+
+// wrapCmd prepends environment variable exports and tool paths if needed.
+func (e *ShellExecutor) wrapCmd(cmd string) string {
+	// Always prepend tool paths to PATH so tools like cargo, mise, etc. are found
+	wrapped := fmt.Sprintf("export PATH=%s:$PATH && ", toolPaths())
+
+	// Inject env vars if command references them
+	if len(e.EnvVars) > 0 {
+		hasRef := false
+		for _, env := range e.EnvVars {
+			parts := strings.SplitN(env, "=", 2)
+			if len(parts) == 2 && strings.Contains(cmd, "$"+parts[0]) {
+				hasRef = true
+				break
+			}
+		}
+		if hasRef {
+			var exports []string
+			for _, env := range e.EnvVars {
+				parts := strings.SplitN(env, "=", 2)
+				if len(parts) == 2 {
+					exports = append(exports, "export "+env)
+				}
+			}
+			wrapped += strings.Join(exports, " && ") + " && "
+		}
+	}
+
+	return wrapped + cmd
+}
+
 func (e *ShellExecutor) Execute(cmd string) (string, error) {
 	start := time.Now()
 
@@ -77,35 +112,6 @@ func (e *ShellExecutor) ExecuteWithOutput(cmd string) (string, error) {
 		return string(output), err
 	}
 	return string(output), nil
-}
-
-// wrapCmd prepends environment variable exports if needed.
-func (e *ShellExecutor) wrapCmd(cmd string) string {
-	if len(e.EnvVars) == 0 {
-		return cmd
-	}
-
-	// Only inject env vars if the command references them
-	hasRef := false
-	for _, env := range e.EnvVars {
-		parts := strings.SplitN(env, "=", 2)
-		if len(parts) == 2 && strings.Contains(cmd, "$"+parts[0]) {
-			hasRef = true
-			break
-		}
-	}
-	if !hasRef {
-		return cmd
-	}
-
-	var exports []string
-	for _, env := range e.EnvVars {
-		parts := strings.SplitN(env, "=", 2)
-		if len(parts) == 2 {
-			exports = append(exports, "export "+env)
-		}
-	}
-	return strings.Join(exports, " && ") + " && " + cmd
 }
 
 // shellArgs returns the preferred shell and argument flag.
