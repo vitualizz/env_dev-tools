@@ -8,6 +8,7 @@ services:
     tty: true
     volumes:
       - .:/app
+      - devstack-logs:/root/.vitualizz-devstack
 
   test:
     build:
@@ -27,3 +28,6 @@ services:
     stdin_open: true
     tty: true
     entrypoint: ["/bin/sh"]
+
+volumes:
+  devstack-logs:
