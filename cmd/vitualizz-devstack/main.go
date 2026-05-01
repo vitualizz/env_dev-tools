@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,16 +16,62 @@ import (
 	"github.com/vitualizz/vitualizz-devstack/i18n/locales"
 )
 
+//go:embed config/tools.yaml
+var embeddedToolsYAML []byte
+
+//go:embed all:config/kitty/*
+var embeddedKitty embed.FS
+
+//go:embed all:config/zsh/*
+var embeddedZsh embed.FS
+
 func main() {
-	// Check for --ci flag
+	// Check for flags
 	ciMode := false
+	selfDestruct := false
 	for _, arg := range os.Args[1:] {
-		if arg == "--ci" {
+		switch arg {
+		case "--ci":
 			ciMode = true
+		case "--self-destruct":
+			selfDestruct = true
 		}
 	}
 
-	configPath := getConfigPath()
+	// If self-destruct mode, register cleanup to delete binary on exit
+	binPath := ""
+	if selfDestruct {
+		var err error
+		binPath, err = os.Executable()
+		if err != nil {
+			binPath = ""
+		}
+		defer func() {
+			if binPath != "" {
+				os.Remove(binPath)
+			}
+		}()
+	}
+
+	// Determine config source: env override or embedded
+	var configPath string
+	var configDir string
+
+	if envPath := os.Getenv("ENVSETUP_CONFIG"); envPath != "" {
+		// Development/testing: use external config file
+		configPath = envPath
+		configDir = filepath.Dir(envPath)
+	} else {
+		// Production: extract embedded config to temp directory
+		var err error
+		configDir, err = extractEmbeddedConfig()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error extracting config: %v\n", err)
+			os.Exit(1)
+		}
+		defer os.RemoveAll(configDir)
+		configPath = filepath.Join(configDir, "config", "tools.yaml")
+	}
 
 	repo, err := config.NewToolRepository(configPath)
 	if err != nil {
@@ -33,7 +80,6 @@ func main() {
 	}
 
 	installer := installers.NewToolInstaller()
-	configDir := resolveConfigDir(configPath)
 	installer.SetConfigDir(configDir)
 
 	i18n := locales.NewI18nSimple()
@@ -47,19 +93,71 @@ func main() {
 	runTUI(repo, installer, i18n)
 }
 
-func getConfigPath() string {
-	if envPath := os.Getenv("ENVSETUP_CONFIG"); envPath != "" {
-		return envPath
-	}
-	return "config/tools.yaml"
-}
-
-func resolveConfigDir(configPath string) string {
-	abs, err := filepath.Abs(configPath)
+// extractEmbeddedConfig extracts embedded config files to a temp directory
+// and returns the path to the temp directory (parent of config/).
+func extractEmbeddedConfig() (string, error) {
+	tmpDir, err := os.MkdirTemp("", "devstack-config-*")
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return filepath.Dir(abs)
+
+	// Extract tools.yaml
+	configSubDir := filepath.Join(tmpDir, "config")
+	if err := os.MkdirAll(configSubDir, 0o755); err != nil {
+		return "", err
+	}
+
+	if err := os.WriteFile(filepath.Join(configSubDir, "tools.yaml"), embeddedToolsYAML, 0o644); err != nil {
+		return "", err
+	}
+
+	// Extract kitty configs
+	kittyDir := filepath.Join(configSubDir, "kitty")
+	if err := os.MkdirAll(kittyDir, 0o755); err != nil {
+		return "", err
+	}
+
+	kittyFiles, err := embeddedKitty.ReadDir("config/kitty")
+	if err != nil {
+		return "", err
+	}
+	for _, f := range kittyFiles {
+		if f.IsDir() {
+			continue
+		}
+		data, err := embeddedKitty.ReadFile(filepath.Join("config", "kitty", f.Name()))
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(filepath.Join(kittyDir, f.Name()), data, 0o644); err != nil {
+			return "", err
+		}
+	}
+
+	// Extract zsh configs
+	zshDir := filepath.Join(configSubDir, "zsh")
+	if err := os.MkdirAll(zshDir, 0o755); err != nil {
+		return "", err
+	}
+
+	zshFiles, err := embeddedZsh.ReadDir("config/zsh")
+	if err != nil {
+		return "", err
+	}
+	for _, f := range zshFiles {
+		if f.IsDir() {
+			continue
+		}
+		data, err := embeddedZsh.ReadFile(filepath.Join("config", "zsh", f.Name()))
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(filepath.Join(zshDir, f.Name()), data, 0o644); err != nil {
+			return "", err
+		}
+	}
+
+	return tmpDir, nil
 }
 
 // =============================================================================

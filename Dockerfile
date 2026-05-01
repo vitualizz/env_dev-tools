@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o envsetup ./cmd/envsetup/
+RUN CGO_ENABLED=0 GOOS=linux go build -o vitualizz-devstack ./cmd/vitualizz-devstack/
 
 FROM alpine:3.19
 
@@ -25,11 +25,8 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-COPY --from=builder /build/envsetup /app/envsetup
-COPY config/ ./config/
+COPY --from=builder /build/vitualizz-devstack /app/vitualizz-devstack
 
-RUN chmod +x /app/envsetup
+RUN chmod +x /app/vitualizz-devstack
 
-ENV ENVSETUP_CONFIG=/app/config/tools.yaml
-
-CMD ["/app/envsetup"]
+CMD ["/app/vitualizz-devstack"]

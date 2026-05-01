@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Vitualizz DevStack — Bootstrap Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | bash
+# Vitualizz DevStack — Run-once Installer
+# Usage: curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/master/install.sh | bash
+#
+# Downloads the binary to /tmp, runs the TUI installer, then auto-deletes.
+# No permanent binary is left on your system.
 set -euo pipefail
 
 # --- Colors ---
@@ -13,7 +16,6 @@ NC='\033[0m'
 
 # --- Config ---
 REPO="vitualizz/vitualizz-devstack"
-INSTALL_DIR="${DEVSTACK_INSTALL_DIR:-/usr/local/bin}"
 BIN_NAME="vitualizz-devstack"
 
 info()    { echo -e "${CYAN}▸${NC} $1"; }
@@ -109,30 +111,16 @@ build_from_source() {
   success "Binary built"
 }
 
-# --- Install ---
-install_binary() {
-  if [[ ! -w "$INSTALL_DIR" ]]; then
-    warn "Cannot write to ${INSTALL_DIR}"
-    warn "Please run with sudo: curl ... | sudo bash"
-    fatal "Permission denied"
-  fi
-
-  cp "$TMP_BIN" "${INSTALL_DIR}/${BIN_NAME}"
-  chmod +x "${INSTALL_DIR}/${BIN_NAME}"
-  success "Installed to ${INSTALL_DIR}/${BIN_NAME}"
-}
-
 # --- Execute ---
 if download_binary; then
-  install_binary
+  :
 else
   build_from_source
-  install_binary
 fi
 
 echo
-success "Vitualizz DevStack is ready!"
+info "Starting Vitualizz DevStack..."
 echo
-echo "  Run: vitualizz-devstack"
-echo "  CI:  vitualizz-devstack --ci"
-echo
+
+# Run the binary with --self-destruct flag so it deletes itself after use
+exec "$TMP_BIN" --self-destruct

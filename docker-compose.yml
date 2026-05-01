@@ -3,19 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: envsetup
+    container_name: vitualizz-devstack
     stdin_open: true
     tty: true
     volumes:
       - .:/app
-    environment:
-      - ENVSETUP_CONFIG=/app/config/tools.yaml
 
   test:
     build:
       context: .
       dockerfile: Dockerfile.test
-    container_name: envsetup-test
+    container_name: vitualizz-devstack-test
     volumes:
       - .:/app
     working_dir: /app
@@ -25,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: envsetup-shell
+    container_name: vitualizz-devstack-shell
     stdin_open: true
     tty: true
     entrypoint: ["/bin/sh"]
