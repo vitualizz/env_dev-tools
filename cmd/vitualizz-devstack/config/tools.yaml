@@ -220,7 +220,17 @@ tools:
   - name: rustup
     category: tools
     install:
-      all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      all: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        # Update PATH in user's shell config for interactive sessions
+        RC_LINE='export PATH="$HOME/.cargo/bin:$PATH"'
+        for rc in ~/.bashrc ~/.zshrc; do
+          if [ -f "$rc" ]; then
+            grep -qF "$RC_LINE" "$rc" 2>/dev/null || echo "$RC_LINE" >> "$rc"
+          fi
+        done
+        # Source immediately for current session
+        [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
     uninstall:
       all: rustup self uninstall -y
     check: rustup --version
@@ -235,7 +245,7 @@ tools:
   - name: opencode
     category: tools
     install:
-      all: curl -sSL https://get.opencode.ai | sh -s -- --yes
+      all: curl -fsSL https://opencode.ai/install | bash
     uninstall:
       all: rm -f ~/.opencode/bin/opencode
     check: opencode --version
@@ -334,9 +344,9 @@ tools:
     category: tools
     install:
       debian: |
-        sudo mkdir -p /etc/apt/keyrings
-        sudo wget -qO /etc/apt/keyrings/gierens.gpg https://deb.gierens.de/gpg.key
-        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/gierens.list
+        mkdir -p /etc/apt/keyrings
+        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
         sudo apt-get update
         sudo apt-get install -y eza
       arch: sudo pacman -S --noconfirm eza
