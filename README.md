@@ -13,7 +13,7 @@ Interactive TUI that installs and configures a complete terminal-first developme
 One command, no dependencies needed:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/master/install.sh | sudo bash
 ```
 
 The installer downloads a pre-compiled binary from the latest GitHub release. No Go, no Docker, no compilation — just runs.
