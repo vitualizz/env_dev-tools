@@ -17,6 +17,8 @@ NC='\033[0m'
 # --- Config ---
 REPO="vitualizz/vitualizz-devstack"
 BIN_NAME="vitualizz-devstack"
+LOG_DIR="${HOME}/.vitualizz-devstack"
+LOG_FILE="${LOG_DIR}/install.log"
 
 info()    { echo -e "${CYAN}▸${NC} $1"; }
 success() { echo -e "${GREEN}✓${NC} $1"; }
@@ -24,8 +26,29 @@ warn()    { echo -e "${YELLOW}!${NC} $1"; }
 error()   { echo -e "${RED}✗${NC} $1" >&2; }
 fatal()   { error "$1"; exit 1; }
 
+# --- Logging ---
+mkdir -p "$LOG_DIR"
+echo "=== Install session started: $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$LOG_FILE"
+
+log_step() {
+  local ts
+  ts=$(date '+%H:%M:%S')
+  echo "[$ts] $1" >> "$LOG_FILE"
+}
+
+log_error() {
+  local ts
+  ts=$(date '+%H:%M:%S')
+  echo "[$ts] ERR: $1" >> "$LOG_FILE"
+  if [[ -n "${2:-}" ]]; then
+    echo "       Output: $2" >> "$LOG_FILE"
+  fi
+}
+
 cleanup() { rm -f "$TMP_BIN" 2>/dev/null || true; }
 trap cleanup EXIT
+
+log_step "CMD: Platform check"
 
 # --- Banner ---
 echo "${BOLD}${CYAN}"
@@ -44,11 +67,14 @@ BANNER
 echo -e "${NC}"
 
 # --- Platform check ---
+log_step "CMD: uname -s ($(uname -s))"
 if [[ "$(uname -s)" != "Linux" ]]; then
+  log_error "Not Linux"
   fatal "Vitualizz DevStack only supports Linux. macOS, Windows and BSD are not supported."
 fi
 
 # --- Architecture detection ---
+log_step "CMD: uname -m ($(uname -m))"
 ARCH=$(uname -m)
 case "$ARCH" in
   x86_64)  GOARCH="x86_64" ;;
@@ -62,6 +88,7 @@ TMP_BIN=$(mktemp "/tmp/${BIN_NAME}.XXXXXX")
 # --- Strategy: Download pre-built binary ---
 download_binary() {
   info "Fetching latest release from ${REPO}..."
+  log_step "CMD: Fetch releases from GitHub API"
 
   # Use GitHub API to get latest release
   local latest_url
@@ -72,6 +99,7 @@ download_binary() {
 
   if [[ -z "$latest_url" ]]; then
     error "No release binary found for linux/${ARCH}"
+    log_error "No binary URL found for linux/${ARCH}"
     warn ""
     warn "Falling back to Go build method..."
     return 1
@@ -80,22 +108,28 @@ download_binary() {
   local version
   version=$(echo "$latest_url" | grep -oP 'v\K[0-9]+\.[0-9]+\.[0-9]+' || echo "latest")
   info "Downloading Vitualizz DevStack ${version} (linux/${ARCH})..."
+  log_step "CMD: curl -o $TMP_BIN $latest_url"
 
-  if ! curl -fsSL -o "$TMP_BIN" "$latest_url"; then
+  local output
+  output=$(curl -fsSL -o "$TMP_BIN" "$latest_url" 2>&1) || {
     error "Download failed"
+    log_error "Download failed" "$output"
     warn ""
     warn "Falling back to Go build method..."
     return 1
-  fi
+  }
 
   chmod +x "$TMP_BIN"
   success "Binary downloaded"
+  log_step "OK: Binary downloaded ($(stat -c%s "$TMP_BIN" 2>/dev/null || echo "unknown") bytes)"
   return 0
 }
 
 # --- Fallback: Build from source ---
 build_from_source() {
+  log_step "CMD: Fallback to source build"
   if ! command -v go &>/dev/null; then
+    log_error "Go not found"
     fatal "Go 1.24+ is required for source build. Install from https://go.dev/doc/install"
   fi
 
@@ -104,13 +138,16 @@ build_from_source() {
   trap 'rm -rf "$tmpdir"' EXIT
 
   info "Cloning ${REPO}..."
+  log_step "CMD: git clone --depth 1 ${REPO}"
   git clone --depth 1 "https://github.com/${REPO}.git" "$tmpdir" 2>/dev/null || \
     fatal "Failed to clone repository. Make sure git is installed."
 
   info "Building from source..."
+  log_step "CMD: go build -o $TMP_BIN ./cmd/vitualizz-devstack/"
   cd "$tmpdir"
   go build -o "$TMP_BIN" ./cmd/vitualizz-devstack/
   success "Binary built"
+  log_step "OK: Binary built from source"
 }
 
 # --- Execute ---
@@ -123,6 +160,10 @@ fi
 echo
 info "Starting Vitualizz DevStack..."
 echo
+info "📝 Log: ${LOG_FILE}"
+echo
+
+log_step "CMD: exec $TMP_BIN --self-destruct"
 
 # Run the binary with --self-destruct flag so it deletes itself after use
 exec "$TMP_BIN" --self-destruct

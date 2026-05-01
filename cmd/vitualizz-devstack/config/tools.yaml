@@ -61,7 +61,6 @@ tools:
       debian: sudo apt-get install -y kitty
       fedora: sudo dnf install -y kitty
       suse: sudo zypper install -y kitty
-      alpine: apk add kitty
       brew: brew install kitty
       fallback: curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
     uninstall:
@@ -150,7 +149,6 @@ tools:
     category: shell
     depends_on: [zsh]
     install:
-      alpine: apk add --no-cache starship
       fallback: curl -sS https://starship.rs/install.sh | sh -s -- --yes --force
     uninstall:
       all: rm -f ~/.local/bin/starship
@@ -169,7 +167,6 @@ tools:
       debian: sudo apt-get install -y neovim
       arch: sudo pacman -S --noconfirm neovim
       fedora: sudo dnf install -y neovim
-      alpine: apk add --no-cache neovim
       fallback: |
         curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
         sudo tar xzf nvim-linux64.tar.gz -C /opt
@@ -192,9 +189,6 @@ tools:
   - name: mise
     category: tools
     install:
-      alpine: |
-        apk add --no-cache tar xz
-        curl -sSL https://github.com/jdx/mise/releases/latest/download/mise-latest-linux-x64-musl.tar.gz | tar xz -C /usr/local/bin --strip-components=1
       fallback: curl https://mise.run | MISE_YES=1 sh
     uninstall:
       all: rm -rf ~/.local/share/mise
@@ -210,7 +204,6 @@ tools:
   - name: rustup
     category: tools
     install:
-      alpine: apk add --no-cache rustup
       all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --yes
     uninstall:
       all: rustup self uninstall -y
@@ -283,7 +276,6 @@ tools:
   - name: fzf
     category: tools
     install:
-      alpine: apk add --no-cache fzf
       debian: sudo apt-get install -y fzf
       arch: sudo pacman -S --noconfirm fzf
       fedora: sudo dnf install -y fzf
@@ -307,7 +299,6 @@ tools:
       debian: sudo apt-get install -y bat
       arch: sudo pacman -S --noconfirm bat
       fedora: sudo dnf install -y bat
-      alpine: apk add --no-cache bat
       fallback: cargo install bat
     uninstall:
       debian: sudo apt-get remove -y bat
@@ -330,7 +321,6 @@ tools:
       fedora: |
         sudo rpmfusion-free=$(grep -q '^enabled=1' /etc/fedora-release && echo "--enablerepo=rpmfusion_free" || echo "")
         sudo dnf install -y eza
-      alpine: apk add --no-cache eza
       fallback: cargo install eza
     uninstall:
       arch: sudo pacman -R --noconfirm eza
@@ -348,13 +338,6 @@ tools:
   - name: yazi
     category: tools
     install:
-      alpine: |
-        apk add --no-cache unzip
-        curl -sSLo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-musl.zip
-        unzip -q /tmp/yazi.zip -d /tmp/yazi-tmp
-        mv /tmp/yazi-tmp/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/
-        mv /tmp/yazi-tmp/yazi-x86_64-unknown-linux-musl/ya /usr/local/bin/
-        rm -rf /tmp/yazi.zip /tmp/yazi-tmp
       all: cargo install yazi-fm --locked
     uninstall:
       all: cargo uninstall yazi-fm
@@ -374,7 +357,6 @@ tools:
       arch: sudo pacman -S --noconfirm jq
       fedora: sudo dnf install -y jq
       suse: sudo zypper install -y jq
-      alpine: apk add --no-cache jq
       brew: brew install jq
     uninstall:
       debian: sudo apt-get remove -y jq
@@ -393,11 +375,6 @@ tools:
   - name: lazygit
     category: tools
     install:
-      alpine: |
-        LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | tr -d 'v')
-        curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-        tar xf /tmp/lazygit.tar.gz -C /usr/local/bin lazygit
-        rm /tmp/lazygit.tar.gz
       all: curl -sSL https://raw.githubusercontent.com/jesseduffield/lazygit/master/scripts/install.sh | sh
     uninstall:
       all: rm -f ~/.local/bin/lazygit
@@ -417,7 +394,6 @@ tools:
       arch: sudo pacman -S --noconfirm direnv
       fedora: sudo dnf install -y direnv
       suse: sudo zypper install -y direnv
-      alpine: apk add --no-cache direnv
       brew: brew install direnv
     uninstall:
       debian: sudo apt-get remove -y direnv
@@ -437,7 +413,6 @@ tools:
   - name: zoxide
     category: tools
     install:
-      alpine: apk add --no-cache zoxide
       fallback: curl -sSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --yes
     uninstall:
       all: rm -f ~/.local/bin/zoxide
@@ -453,8 +428,6 @@ tools:
   - name: bottom
     category: tools
     install:
-      alpine: |
-        curl -sSL https://github.com/ClementTsang/bottom/releases/latest/download/bottom_x86_64-unknown-linux-musl.tar.gz | tar xz -C /usr/local/bin btm
       all: cargo install bottom --locked
     uninstall:
       all: cargo uninstall bottom
@@ -478,7 +451,6 @@ tools:
         sudo apt-get install -y gh
       arch: sudo pacman -S --noconfirm github-cli
       fedora: sudo dnf install -y gh
-      alpine: apk add --no-cache github-cli
       brew: brew install gh
     uninstall:
       debian: sudo apt-get remove -y gh
@@ -497,7 +469,6 @@ tools:
   - name: uv
     category: tools
     install:
-      alpine: apk add --no-cache uv
       all: curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --yes
     uninstall:
       all: rm -f ~/.local/bin/uv
@@ -513,9 +484,6 @@ tools:
   - name: httpie
     category: tools
     install:
-      alpine: |
-        apk add --no-cache python3 py3-pip
-        pip3 install --break-system-packages httpie
       all: pip install httpie
     uninstall:
       all: pip uninstall httpie -y
@@ -536,9 +504,6 @@ tools:
         sudo chmod +x /usr/local/bin/yq
       arch: yay -S --noconfirm yq
       fedora: sudo dnf install -y yq
-      alpine: |
-        wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        chmod +x /usr/local/bin/yq
       brew: brew install yq
     uninstall:
       debian: sudo rm -f /usr/local/bin/yq
@@ -560,7 +525,6 @@ tools:
       debian: sudo apt-get install -y ripgrep
       arch: sudo pacman -S --noconfirm ripgrep
       fedora: sudo dnf install -y ripgrep
-      alpine: apk add --no-cache ripgrep
       brew: brew install ripgrep
     uninstall:
       debian: sudo apt-get remove -y ripgrep
@@ -584,7 +548,6 @@ tools:
         sudo ln -sf $(which fdfind) /usr/local/bin/fd 2>/dev/null || true
       arch: sudo pacman -S --noconfirm fd
       fedora: sudo dnf install -y fd-find
-      alpine: apk add --no-cache fd
       brew: brew install fd
     uninstall:
       debian: sudo apt-get remove -y fd-find
@@ -604,7 +567,6 @@ tools:
     category: tools
     depends_on: [rustup]
     install:
-      alpine: apk add --no-cache sd
       fallback: . "$HOME/.cargo/env" && cargo install sd --quiet
     uninstall:
       all: . "$HOME/.cargo/env" && cargo uninstall sd
@@ -627,12 +589,6 @@ tools:
         rm /tmp/delta.deb
       arch: sudo pacman -S --noconfirm git-delta
       fedora: sudo dnf install -y git-delta
-      alpine: |
-        DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-        curl -sSLo /tmp/delta.tar.gz "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl.tar.gz"
-        tar xf /tmp/delta.tar.gz -C /tmp
-        mv "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl/delta" /usr/local/bin/
-        rm -rf /tmp/delta.tar.gz "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl"
       brew: brew install git-delta
     uninstall:
       debian: sudo dpkg -r git-delta
@@ -654,12 +610,6 @@ tools:
       debian: sudo apt-get install -y duf
       arch: sudo pacman -S --noconfirm duf
       fedora: sudo dnf install -y duf
-      alpine: |
-        DUF_VERSION=$(curl -s https://api.github.com/repos/muesli/duf/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
-        curl -sSLo /tmp/duf.tar.gz "https://github.com/muesli/duf/releases/download/v${DUF_VERSION}/duf_${DUF_VERSION}_linux_x86_64.tar.gz"
-        tar xf /tmp/duf.tar.gz -C /tmp
-        mv /tmp/duf /usr/local/bin/
-        rm -rf /tmp/duf.tar.gz
       brew: brew install duf
     uninstall:
       debian: sudo apt-get remove -y duf
@@ -679,12 +629,6 @@ tools:
     category: tools
     install:
       arch: sudo pacman -S --noconfirm dust
-      alpine: |
-        DUST_VERSION=$(curl -s https://api.github.com/repos/bootandy/dust/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
-        curl -sSLo /tmp/dust.tar.gz "https://github.com/bootandy/dust/releases/download/v${DUST_VERSION}/dust-v${DUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
-        tar xf /tmp/dust.tar.gz -C /tmp
-        mv "/tmp/dust-v${DUST_VERSION}-x86_64-unknown-linux-musl/dust" /usr/local/bin/
-        rm -rf /tmp/dust.tar.gz "/tmp/dust-v${DUST_VERSION}-x86_64-unknown-linux-musl"
       brew: brew install dust
       fallback: cargo install du-dust
     uninstall:
@@ -705,7 +649,6 @@ tools:
       debian: sudo apt-get install -y fastfetch
       arch: sudo pacman -S --noconfirm fastfetch
       fedora: sudo dnf install -y fastfetch
-      alpine: apk add --no-cache fastfetch
       brew: brew install fastfetch
     uninstall:
       debian: sudo apt-get remove -y fastfetch
@@ -727,7 +670,6 @@ tools:
       debian: sudo apt-get install -y btop
       arch: sudo pacman -S --noconfirm btop
       fedora: sudo dnf install -y btop
-      alpine: apk add --no-cache btop
       brew: brew install btop
     uninstall:
       debian: sudo apt-get remove -y btop
@@ -747,11 +689,6 @@ tools:
     category: tools
     install:
       arch: sudo pacman -S --noconfirm onefetch
-      alpine: |
-        ONEFETCH_VERSION=$(curl -s https://api.github.com/repos/o2sh/onefetch/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-        curl -sSLo /tmp/onefetch.tar.gz "https://github.com/o2sh/onefetch/releases/download/${ONEFETCH_VERSION}/onefetch_${ONEFETCH_VERSION}_x86_64-unknown-linux-musl.tar.gz"
-        tar xf /tmp/onefetch.tar.gz -C /usr/local/bin onefetch
-        rm /tmp/onefetch.tar.gz
       brew: brew install onefetch
       fallback: cargo install onefetch
     uninstall:
@@ -775,12 +712,6 @@ tools:
         rm /tmp/glow.deb
       arch: sudo pacman -S --noconfirm glow
       fedora: sudo dnf install -y glow
-      alpine: |
-        GLOW_VERSION=$(curl -s https://api.github.com/repos/charmbracelet/glow/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
-        curl -sSLo /tmp/glow.tar.gz "https://github.com/charmbracelet/glow/releases/download/v${GLOW_VERSION}/glow_${GLOW_VERSION}_Linux_x86_64.tar.gz"
-        tar xf /tmp/glow.tar.gz -C /tmp
-        mv /tmp/glow /usr/local/bin/
-        rm -rf /tmp/glow.tar.gz
       brew: brew install glow
     uninstall:
       debian: sudo dpkg -r glow
@@ -800,9 +731,6 @@ tools:
   - name: tealdeer
     category: tools
     install:
-      alpine: |
-        curl -sSLo /usr/local/bin/tldr https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-x86_64-musl
-        chmod +x /usr/local/bin/tldr
       brew: brew install tealdeer
       fallback: cargo install tealdeer
     uninstall:
@@ -903,7 +831,6 @@ tools:
   - name: atuin
     category: shell
     install:
-      alpine: apk add --no-cache atuin
       all: curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive
     uninstall:
       all: rm -f ~/.local/bin/atuin
@@ -920,11 +847,6 @@ tools:
     category: container
     depends_on: [docker]
     install:
-      alpine: |
-        LAZYDOCKER_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazydocker/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | tr -d 'v')
-        curl -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/latest/download/lazydocker_${LAZYDOCKER_VERSION}_Linux_x86_64.tar.gz"
-        tar xf /tmp/lazydocker.tar.gz -C /usr/local/bin lazydocker
-        rm /tmp/lazydocker.tar.gz
       all: curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
     uninstall:
       all: rm -f ~/.local/bin/lazydocker

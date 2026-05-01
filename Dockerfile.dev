@@ -1,6 +1,8 @@
-FROM golang:1.24-alpine
+FROM golang:1.24-bookworm
 
-RUN apk add --no-cache git bash curl wget zsh sudo
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git bash curl wget zsh sudo \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -9,4 +11,4 @@ RUN go mod download
 
 # Build and run in CI mode by default
 # Override with: docker compose run app ./vitualizz-devstack --tui
-CMD ["sh", "-c", "go build -buildvcs=false -o /tmp/vitualizz-devstack ./cmd/vitualizz-devstack/ && /tmp/vitualizz-devstack --ci"]
+CMD ["bash", "-c", "go build -buildvcs=false -o /tmp/vitualizz-devstack ./cmd/vitualizz-devstack/ && /tmp/vitualizz-devstack --ci"]

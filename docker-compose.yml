@@ -27,7 +27,7 @@ services:
     container_name: vitualizz-devstack-shell
     stdin_open: true
     tty: true
-    entrypoint: ["/bin/sh"]
+    entrypoint: ["/bin/bash"]
 
 volumes:
   devstack-logs:
