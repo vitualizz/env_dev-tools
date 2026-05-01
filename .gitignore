@@ -1,6 +1,6 @@
-# Binary
-envsetup
-vitualizz-devstack
+# Binary (root only)
+/envsetup
+/vitualizz-devstack
 
 # opencode runtime
 .opencode/
