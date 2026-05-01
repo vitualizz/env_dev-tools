@@ -90,7 +90,8 @@ Other distros may work if tools fall back to the `all` (cargo/universal) install
 Hexagonal (Ports & Adapters) — UI and infrastructure never import each other, only through interfaces.
 
 ```
-cmd/envsetup/
+cmd/vitualizz-devstack/
+    config/          ← embedded config files (tools.yaml, kitty/, zsh/)
 internal/
   domain/
     entities/     ← Tool, Theme, Distro, Category
@@ -103,10 +104,10 @@ internal/
   ui/
     components/   ← Bubbletea app
     models/       ← AppModel (state machine)
-config/
-  tools.yaml      ← tool definitions
-  kitty/          ← terminal config
 i18n/             ← en/es translations
+```
+
+> **Note**: `config/` (tools.yaml, kitty/, zsh/) lives inside `cmd/vitualizz-devstack/config/` and is embedded into the binary at build time via `go:embed`.
 ```
 
 ## Development Environment
@@ -120,7 +121,7 @@ i18n/             ← en/es translations
 ### Run Locally
 
 ```bash
-go run ./cmd/envsetup/
+go run ./cmd/vitualizz-devstack/
 ```
 
 ### Run Tests
@@ -162,7 +163,7 @@ vagrant up arch      # Arch Linux (~3 min)
 vagrant ssh ubuntu   # SSH into the VM
 # Inside the VM:
 cd /vagrant
-go run ./cmd/envsetup/
+go run ./cmd/vitualizz-devstack/
 
 vagrant destroy -f   # Clean up when done
 ```

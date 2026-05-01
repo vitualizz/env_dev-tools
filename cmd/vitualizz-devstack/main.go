@@ -57,7 +57,7 @@ func main() {
 	var configPath string
 	var configDir string
 
-	if envPath := os.Getenv("ENVSETUP_CONFIG"); envPath != "" {
+	if envPath := os.Getenv("DEVSTACK_CONFIG"); envPath != "" {
 		// Development/testing: use external config file
 		configPath = envPath
 		configDir = filepath.Dir(envPath)
@@ -70,7 +70,7 @@ func main() {
 			os.Exit(1)
 		}
 		defer os.RemoveAll(configDir)
-		configPath = filepath.Join(configDir, "config", "tools.yaml")
+		configPath = filepath.Join(configDir, "tools.yaml")
 	}
 
 	repo, err := config.NewToolRepository(configPath)
@@ -94,25 +94,21 @@ func main() {
 }
 
 // extractEmbeddedConfig extracts embedded config files to a temp directory
-// and returns the path to the temp directory (parent of config/).
+// and returns the path to the temp directory.
+// Structure: tmpDir/tools.yaml, tmpDir/kitty/*, tmpDir/zsh/*
 func extractEmbeddedConfig() (string, error) {
 	tmpDir, err := os.MkdirTemp("", "devstack-config-*")
 	if err != nil {
 		return "", err
 	}
 
-	// Extract tools.yaml
-	configSubDir := filepath.Join(tmpDir, "config")
-	if err := os.MkdirAll(configSubDir, 0o755); err != nil {
+	// Extract tools.yaml directly to tmpDir root
+	if err := os.WriteFile(filepath.Join(tmpDir, "tools.yaml"), embeddedToolsYAML, 0o644); err != nil {
 		return "", err
 	}
 
-	if err := os.WriteFile(filepath.Join(configSubDir, "tools.yaml"), embeddedToolsYAML, 0o644); err != nil {
-		return "", err
-	}
-
-	// Extract kitty configs
-	kittyDir := filepath.Join(configSubDir, "kitty")
+	// Extract kitty configs to tmpDir/kitty/
+	kittyDir := filepath.Join(tmpDir, "kitty")
 	if err := os.MkdirAll(kittyDir, 0o755); err != nil {
 		return "", err
 	}
@@ -134,8 +130,8 @@ func extractEmbeddedConfig() (string, error) {
 		}
 	}
 
-	// Extract zsh configs
-	zshDir := filepath.Join(configSubDir, "zsh")
+	// Extract zsh configs to tmpDir/zsh/
+	zshDir := filepath.Join(tmpDir, "zsh")
 	if err := os.MkdirAll(zshDir, 0o755); err != nil {
 		return "", err
 	}
