@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -50,7 +51,7 @@ func (l *InstallLogger) LogCommand(toolName, command string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	fmt.Fprintf(l.file, "[%s] CMD [%s]: %s\n", timestamp(), toolName, command)
-	l.file.Sync()
+	_ = l.file.Sync()
 }
 
 // LogSuccess logs a successful command with duration.
@@ -58,7 +59,7 @@ func (l *InstallLogger) LogSuccess(toolName string, duration time.Duration) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	fmt.Fprintf(l.file, "[%s] OK   [%s] (%s)\n", timestamp(), toolName, duration)
-	l.file.Sync()
+	_ = l.file.Sync()
 }
 
 // LogError logs a failed command with error and output.
@@ -74,7 +75,7 @@ func (l *InstallLogger) LogError(toolName, command string, err error, output str
 		fmt.Fprintf(l.file, "       Output:\n%s\n", indent(out, "       "))
 	}
 	fmt.Fprintln(l.file)
-	l.file.Sync()
+	_ = l.file.Sync()
 }
 
 // LogInfo logs a general info message.
@@ -82,7 +83,7 @@ func (l *InstallLogger) LogInfo(msg string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	fmt.Fprintf(l.file, "[%s] INFO: %s\n", timestamp(), msg)
-	l.file.Sync()
+	_ = l.file.Sync()
 }
 
 // Close closes the log file.
@@ -105,8 +106,5 @@ func truncate(s string, maxLen int) string {
 }
 
 func indent(s, prefix string) string {
-	result := prefix + s
-	// Add prefix to newlines
-	result = prefix + s
-	return result
+	return prefix + strings.ReplaceAll(s, "\n", "\n"+prefix)
 }
