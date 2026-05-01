@@ -736,9 +736,7 @@ tools:
     category: tools
     install:
       debian: |
-        curl -sLo /tmp/onefetch.tar.gz "https://github.com/o2sh/onefetch/releases/latest/download/onefetch-$(uname -m)-linux.tar.gz"
-        sudo tar xzf /tmp/onefetch.tar.gz -C /usr/local/bin/ onefetch
-        rm -f /tmp/onefetch.tar.gz
+        wget https://github.com/o2sh/onefetch/releases/latest/download/onefetch_amd64.deb && sudo dpkg -i ./onefetch_amd64.deb
       arch: sudo pacman -S --noconfirm onefetch
       brew: brew install onefetch
       fallback: cargo install onefetch
@@ -758,9 +756,10 @@ tools:
     category: tools
     install:
       debian: |
-        curl -sSLo /tmp/glow.deb https://github.com/charmbracelet/glow/releases/latest/download/glow_linux_amd64.deb
-        sudo dpkg -i /tmp/glow.deb
-        rm /tmp/glow.deb
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
+        sudo apt update && sudo apt install glow
       arch: sudo pacman -S --noconfirm glow
       fedora: sudo dnf install -y glow
       brew: brew install glow
@@ -782,7 +781,7 @@ tools:
   - name: tealdeer
     category: tools
     install:
-      debian: sudo apt-get install -y tealdeer
+      debian: sudo apt-get install -y tldr
       arch: sudo pacman -S --noconfirm tealdeer
       fedora: sudo dnf install -y tealdeer
       fallback: cargo install tealdeer
