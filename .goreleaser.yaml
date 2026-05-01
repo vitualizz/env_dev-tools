@@ -9,7 +9,7 @@ before:
 
 builds:
   - id: vitualizz-devstack
-    main: ./cmd/vitualizz-devstack
+    main: ./cmd/vitualizz-devstack/main.go
     binary: vitualizz-devstack
     env:
       - CGO_ENABLED=0
