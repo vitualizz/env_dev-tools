@@ -35,6 +35,7 @@ type AppModel struct {
 	IsUninstallMode bool
 	ShowLog        bool
 	Results        []entities.InstallResult
+	LogPath        string // path to install log file
 }
 
 // NewAppModel creates an initial model.

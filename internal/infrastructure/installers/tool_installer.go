@@ -6,13 +6,15 @@ import (
 
 	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
 	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/executor"
+	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/logger"
 )
 
 // ToolInstaller handles installation and uninstallation of tools.
 type ToolInstaller struct {
-	exec     *executor.ShellExecutor
-	distro   entities.Distro
+	exec      *executor.ShellExecutor
+	distro    entities.Distro
 	configDir string // path to config directory (for $DEVSTACK_CONFIG)
+	log       *logger.InstallLogger
 }
 
 // NewToolInstaller creates a new installer and auto-detects the distro.
@@ -28,6 +30,21 @@ func NewToolInstallerWithDistro(distro entities.Distro) *ToolInstaller {
 	return &ToolInstaller{
 		exec:   executor.NewShellExecutor(),
 		distro: distro,
+	}
+}
+
+// SetLogger sets the install logger.
+func (i *ToolInstaller) SetLogger(l *logger.InstallLogger) {
+	i.log = l
+	i.exec.LogFunc = func(toolName, command string, output string, err error, duration time.Duration) {
+		if l == nil {
+			return
+		}
+		if err != nil {
+			l.LogError(toolName, command, err, output)
+		} else {
+			l.LogSuccess(toolName, duration)
+		}
 	}
 }
 
@@ -60,6 +77,14 @@ func (i *ToolInstaller) Install(tool *entities.Tool) (*entities.InstallResult, e
 		return result, nil
 	}
 
+	// Set tool name for logging
+	i.exec.ToolName = tool.Name
+
+	// Log command start
+	if i.log != nil {
+		i.log.LogCommand(tool.Name, cmd)
+	}
+
 	output, err := i.exec.ExecuteWithOutput(cmd)
 	result.DurationMs = time.Since(start).Milliseconds()
 
@@ -90,6 +115,14 @@ func (i *ToolInstaller) Uninstall(tool *entities.Tool) (*entities.InstallResult,
 		return result, nil
 	}
 
+	// Set tool name for logging
+	i.exec.ToolName = tool.Name
+
+	// Log command start
+	if i.log != nil {
+		i.log.LogCommand(tool.Name, cmd)
+	}
+
 	output, err := i.exec.ExecuteWithOutput(cmd)
 	result.DurationMs = time.Since(start).Milliseconds()
 
@@ -110,6 +143,7 @@ func (i *ToolInstaller) IsInstalled(tool *entities.Tool) (bool, error) {
 		return false, nil
 	}
 
+	// Don't log check commands to avoid noise
 	output, err := i.exec.ExecuteWithOutput(tool.Check)
 	if err != nil {
 		return false, nil

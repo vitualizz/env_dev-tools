@@ -12,6 +12,7 @@ import (
 	"github.com/vitualizz/vitualizz-devstack/internal/config"
 	"github.com/vitualizz/vitualizz-devstack/internal/domain/entities"
 	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/installers"
+	"github.com/vitualizz/vitualizz-devstack/internal/infrastructure/logger"
 	"github.com/vitualizz/vitualizz-devstack/internal/ui/components"
 	"github.com/vitualizz/vitualizz-devstack/i18n/locales"
 )
@@ -79,18 +80,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize install logger
+	log, err := logger.NewInstallLogger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not create log file: %v\n", err)
+	} else {
+		defer log.Close()
+	}
+
 	installer := installers.NewToolInstaller()
 	installer.SetConfigDir(configDir)
+	installer.SetLogger(log)
 
 	i18n := locales.NewI18nSimple()
 	inDocker := entities.IsDocker()
 
 	if ciMode {
-		runCI(repo, installer, inDocker)
+		runCI(repo, installer, inDocker, log)
 		return
 	}
 
-	runTUI(repo, installer, i18n)
+	runTUI(repo, installer, i18n, log)
 }
 
 // extractEmbeddedConfig extracts embedded config files to a temp directory
@@ -160,7 +170,7 @@ func extractEmbeddedConfig() (string, error) {
 // CI Mode — headless installation
 // =============================================================================
 
-func runCI(repo *config.ToolRepository, installer *installers.ToolInstaller, inDocker bool) {
+func runCI(repo *config.ToolRepository, installer *installers.ToolInstaller, inDocker bool, log *logger.InstallLogger) {
 	fmt.Println("┌─────────────────────────────────────────────┐")
 	fmt.Println("│  Vitualizz DevStack — CI Mode               │")
 	fmt.Println("└─────────────────────────────────────────────┘")
@@ -170,6 +180,10 @@ func runCI(repo *config.ToolRepository, installer *installers.ToolInstaller, inD
 		fmt.Println("  🐳 Docker environment detected")
 		fmt.Println("  Skipping display tools (kitty, docker, etc.)")
 		fmt.Println()
+	}
+
+	if log != nil {
+		fmt.Printf("  📝 Log: %s\n\n", log.LogPath())
 	}
 
 	allTools := repo.GetAll()
@@ -202,7 +216,7 @@ func runCI(repo *config.ToolRepository, installer *installers.ToolInstaller, inD
 			failed++
 			fmt.Println("✗")
 			if result != nil && result.Message != "" {
-				fmt.Printf("    └─ %s\n", truncate(result.Message, 60))
+				fmt.Printf("    └─ %s\n", truncate(result.Message, 80))
 			}
 		} else {
 			success++
@@ -214,6 +228,10 @@ func runCI(repo *config.ToolRepository, installer *installers.ToolInstaller, inD
 	fmt.Println("┌─────────────────────────────────────────────┐")
 	fmt.Printf("│  Total: %d  |  ✓ %d  |  ✗ %d           \n", total, success, failed)
 	fmt.Println("└─────────────────────────────────────────────┘")
+
+	if log != nil {
+		fmt.Printf("\n  📝 Full log: %s\n", log.LogPath())
+	}
 
 	if failed > 0 {
 		fmt.Println()
@@ -244,8 +262,13 @@ func truncate(s string, maxLen int) string {
 // TUI Mode — interactive installation
 // =============================================================================
 
-func runTUI(repo *config.ToolRepository, installer *installers.ToolInstaller, i18n *locales.I18nSimple) {
-	app := components.NewApp(repo, installer, i18n)
+func runTUI(repo *config.ToolRepository, installer *installers.ToolInstaller, i18n *locales.I18nSimple, log *logger.InstallLogger) {
+	logPath := ""
+	if log != nil {
+		logPath = log.LogPath()
+	}
+
+	app := components.NewApp(repo, installer, i18n, logPath)
 
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

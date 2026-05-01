@@ -21,7 +21,7 @@ type App struct {
 	inDocker     bool // true when running inside a Docker container
 }
 
-func NewApp(repo interfaces.ToolRepository, installer interfaces.InstallerPort, i18n *locales.I18nSimple) *App {
+func NewApp(repo interfaces.ToolRepository, installer interfaces.InstallerPort, i18n *locales.I18nSimple, logPath string) *App {
 	app := &App{
 		model:        models.NewAppModel(),
 		repo:         repo,
@@ -31,6 +31,7 @@ func NewApp(repo interfaces.ToolRepository, installer interfaces.InstallerPort, 
 		inDocker:     entities.IsDocker(),
 	}
 	app.model.InDocker = app.inDocker
+	app.model.LogPath = logPath
 	app.renderer = &views.Renderer{
 		Model: app.model,
 		Repo:  repo,
