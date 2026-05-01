@@ -110,7 +110,7 @@ tools:
     category: shell
     depends_on: [zsh]
     install:
-      all: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+      all: test -d ~/.oh-my-zsh || sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     uninstall:
       all: uninstall_oh_my_zsh 2>/dev/null || rm -rf ~/.oh-my-zsh
     check: test -d ~/.oh-my-zsh
@@ -122,7 +122,7 @@ tools:
     category: shell
     depends_on: [oh-my-zsh]
     install:
-      all: git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k
+      all: test -d ~/.oh-my-zsh/custom/themes/powerlevel10k || git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/themes/powerlevel10k
     check: test -d ~/.oh-my-zsh/custom/themes/powerlevel10k
@@ -317,6 +317,7 @@ tools:
   - name: eza
     category: tools
     install:
+      debian: sudo apt-get install -y eza
       arch: sudo pacman -S --noconfirm eza
       fedora: |
         sudo rpmfusion-free=$(grep -q '^enabled=1' /etc/fedora-release && echo "--enablerepo=rpmfusion_free" || echo "")
@@ -375,7 +376,7 @@ tools:
   - name: lazygit
     category: tools
     install:
-      all: curl -sSL https://raw.githubusercontent.com/jesseduffield/lazygit/master/scripts/install.sh | sh
+      all: curl -sSL https://raw.githubusercontent.com/jesseduffield/lazygit/master/scripts/install.sh | bash
     uninstall:
       all: rm -f ~/.local/bin/lazygit
     check: lazygit --version
@@ -413,7 +414,7 @@ tools:
   - name: zoxide
     category: tools
     install:
-      fallback: curl -sSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --yes
+      fallback: curl -sSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
     uninstall:
       all: rm -f ~/.local/bin/zoxide
     check: zoxide --version
@@ -427,6 +428,7 @@ tools:
   # =====================================================================
   - name: bottom
     category: tools
+    depends_on: [rustup]
     install:
       all: cargo install bottom --locked
     uninstall:
@@ -469,7 +471,7 @@ tools:
   - name: uv
     category: tools
     install:
-      all: curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --yes
+      all: curl -LsSf https://astral.sh/uv/install.sh | sh
     uninstall:
       all: rm -f ~/.local/bin/uv
     check: uv --version
@@ -484,7 +486,7 @@ tools:
   - name: httpie
     category: tools
     install:
-      all: pip install httpie
+      all: pip3 install httpie
     uninstall:
       all: pip uninstall httpie -y
     check: http --version
@@ -628,6 +630,7 @@ tools:
   - name: dust
     category: tools
     install:
+      debian: sudo apt-get install -y dust
       arch: sudo pacman -S --noconfirm dust
       brew: brew install dust
       fallback: cargo install du-dust
@@ -646,7 +649,12 @@ tools:
   - name: fastfetch
     category: tools
     install:
-      debian: sudo apt-get install -y fastfetch
+      debian: |
+        sudo apt-get install -y fastfetch || {
+          curl -Lo /tmp/fastfetch.deb "https://github.com/fastfetch-cli/fastfetch/releases/latest/download/fastfetch-linux-amd64.deb"
+          sudo dpkg -i /tmp/fastfetch.deb
+          rm -f /tmp/fastfetch.deb
+        }
       arch: sudo pacman -S --noconfirm fastfetch
       fedora: sudo dnf install -y fastfetch
       brew: brew install fastfetch
@@ -688,6 +696,7 @@ tools:
   - name: onefetch
     category: tools
     install:
+      debian: sudo apt-get install -y onefetch
       arch: sudo pacman -S --noconfirm onefetch
       brew: brew install onefetch
       fallback: cargo install onefetch
@@ -802,7 +811,7 @@ tools:
     category: shell
     depends_on: [oh-my-zsh]
     install:
-      all: git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+      all: test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
     check: test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
@@ -815,7 +824,7 @@ tools:
     category: shell
     depends_on: [oh-my-zsh]
     install:
-      all: git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+      all: test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting || git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
     check: test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting

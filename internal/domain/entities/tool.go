@@ -96,6 +96,25 @@ const (
 // DistroDetectionOrder is the order in which distros are checked for fallbacks.
 var DistroDetectionOrder = []Distro{DistroArch, DistroDebian, DistroFedora, DistroSuse, DistroAlpine, DistroBrew, DistroFallback}
 
+// releaseFileFor returns the distro-specific release file path used as secondary
+// verification when /etc/os-release is unavailable. Returns empty string for
+// distros without a canonical release file (e.g. brew).
+func releaseFileFor(distro Distro) string {
+	switch distro {
+	case DistroArch:
+		return "/etc/arch-release"
+	case DistroDebian:
+		return "/etc/debian_version"
+	case DistroFedora:
+		return "/etc/fedora-release"
+	case DistroSuse:
+		return "/etc/SuSE-release"
+	case DistroAlpine:
+		return "/etc/alpine-release"
+	}
+	return ""
+}
+
 // DetectDistro detects the current Linux distribution.
 func DetectDistro() Distro {
 	data, err := os.ReadFile("/etc/os-release")
@@ -116,10 +135,13 @@ func DetectDistro() Distro {
 		}
 	}
 
-	// Package manager fallbacks
+	// Package manager fallbacks with secondary verification.
+	// When /etc/os-release is unavailable we check for the package manager
+	// binary AND a distro-specific release file to avoid false positives
+	// (e.g. pacman installed on a Debian system).
 	cmds := []struct {
 		distro Distro
-		check string
+		check  string
 	}{
 		{DistroArch, "pacman"},
 		{DistroDebian, "apt-get"},
@@ -130,6 +152,15 @@ func DetectDistro() Distro {
 	}
 	for _, c := range cmds {
 		if _, err := exec.LookPath(c.check); err == nil {
+			// Distros without a canonical release file (brew) pass through.
+			if releaseFile := releaseFileFor(c.distro); releaseFile != "" {
+				if _, err := os.Stat(releaseFile); err == nil {
+					return c.distro
+				}
+				// Package manager exists but release file missing — continue
+				// checking; this avoids false positives from cross-installed tools.
+				continue
+			}
 			return c.distro
 		}
 	}
