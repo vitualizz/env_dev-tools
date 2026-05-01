@@ -9,7 +9,7 @@ before:
 
 builds:
   - id: vitualizz-devstack
-    main: ./cmd/vitualizz-devstack/
+    main: ./cmd/vitualizz-devstack
     binary: vitualizz-devstack
     env:
       - CGO_ENABLED=0
@@ -35,7 +35,8 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "arm64" }}aarch64
       {{- else }}{{ .Arch }}{{ end }}
-    format: binary
+    formats:
+      - binary
     files:
       - none*
 
@@ -54,7 +55,7 @@ release:
 
     ### Quick Install
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/vitualizz/vitualizz-devstack/main/install.sh | sudo bash
     ```
 
 changelog:
