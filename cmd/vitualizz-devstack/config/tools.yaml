@@ -211,7 +211,7 @@ tools:
     category: tools
     install:
       alpine: apk add --no-cache rustup
-      all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --yes
     uninstall:
       all: rustup self uninstall -y
     check: rustup --version
@@ -894,7 +894,7 @@ tools:
     category: shell
     install:
       alpine: apk add --no-cache atuin
-      all: curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --no-modify-config
+      all: curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive
     uninstall:
       all: rm -f ~/.local/bin/atuin
     check: atuin --version
