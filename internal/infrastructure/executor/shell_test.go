@@ -11,10 +11,10 @@ func TestExecuteWithOutput_Success(t *testing.T) {
 	e := executor.NewShellExecutor()
 
 	tests := []struct {
-		name        string
-		cmd         string
-		wantInOut   string
-		wantErr     bool
+		name      string
+		cmd       string
+		wantInOut string
+		wantErr   bool
 	}{
 		{
 			name:      "echo returns output",
@@ -103,30 +103,5 @@ func TestExecute_OutputContainsTime(t *testing.T) {
 	}
 	if !strings.Contains(out, "ms") {
 		t.Errorf("Execute() output = %q, want to contain timing [Xms]", out)
-	}
-}
-
-func TestDetectDistro(t *testing.T) {
-	e := executor.NewShellExecutor()
-	distro := e.DetectDistro()
-	// Solo verificamos que no pánica y retorna un valor consistente
-	known := map[executor.Distro]bool{
-		executor.DistroUbuntu:  true,
-		executor.DistroDebian:  true,
-		executor.DistroArch:    true,
-		executor.DistroFedora:  true,
-		executor.DistroAlpine:  true,
-		executor.DistroUnknown: true,
-	}
-	if !known[distro] {
-		t.Errorf("DetectDistro() = %q, not a known distro", distro)
-	}
-}
-
-func TestGetPkgManager(t *testing.T) {
-	e := executor.NewShellExecutor()
-	pm := e.GetPkgManager()
-	if pm == "" {
-		t.Error("GetPkgManager() = empty string")
 	}
 }

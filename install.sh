@@ -80,7 +80,7 @@ try_docker() {
 
   clone_repo
   echo
-  info "Running DevStack in Docker (isolated environment)..."
+  info "Running DevStack in Docker (CI mode)..."
   cd "$TMPDIR"
 
   if command -v docker-compose &>/dev/null; then

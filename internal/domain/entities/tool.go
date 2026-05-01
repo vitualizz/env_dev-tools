@@ -7,6 +7,39 @@ import (
 	"strings"
 )
 
+// DockerTools lists tool names that don't make sense inside a Docker container.
+var DockerTools = map[string]bool{
+	"kitty":          true,
+	"kitty-config":   true,
+	"docker":         true,
+	"docker-compose": true,
+	"lazydocker":     true,
+	"docker-filemanager": true,
+}
+
+// IsDocker returns true if the process is running inside a Docker container.
+func IsDocker() bool {
+	// Check for .dockerenv (standard Docker marker)
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		return true
+	}
+
+	// Check cgroup (works on some container runtimes)
+	if data, err := os.ReadFile("/proc/1/cgroup"); err == nil {
+		content := strings.ToLower(string(data))
+		if strings.Contains(content, "docker") || strings.Contains(content, "containerd") || strings.Contains(content, "lxc") {
+			return true
+		}
+	}
+
+	// Check for container environment variable
+	if os.Getenv("container") != "" {
+		return true
+	}
+
+	return false
+}
+
 // =============================================================================
 // Category
 // =============================================================================
@@ -225,6 +258,25 @@ func (t *Tool) HasUninstallCommand() bool {
 // Bundles have empty install commands and no dependencies.
 func (t *Tool) IsBundle() bool {
 	return !t.HasInstallCommand() && len(t.DependsOn) == 0
+}
+
+// IsDockerIncompatible returns true if this tool shouldn't be installed in Docker.
+func (t *Tool) IsDockerIncompatible() bool {
+	return DockerTools[t.Name]
+}
+
+// FilterDockerIncompatible removes tools that don't work inside Docker.
+func FilterDockerIncompatible(tools []Tool) []Tool {
+	if !IsDocker() {
+		return tools
+	}
+	var filtered []Tool
+	for _, t := range tools {
+		if !DockerTools[t.Name] {
+			filtered = append(filtered, t)
+		}
+	}
+	return filtered
 }
 
 // =============================================================================

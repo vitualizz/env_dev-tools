@@ -79,7 +79,7 @@ tools:
     install:
       all: |
         mkdir -p ~/.config/kitty
-        cp -r /app/config/kitty/* ~/.config/kitty/
+        cp -r $DEVSTACK_CONFIG/kitty/* ~/.config/kitty/
     uninstall:
       all: rm -rf ~/.config/kitty
     check: test -f ~/.config/kitty/kitty.conf
@@ -136,9 +136,9 @@ tools:
     depends_on: [zsh, oh-my-zsh]
     install:
       all: |
-        cp /app/config/zsh/zshrc ~/.zshrc
-        cp /app/config/zsh/zshenv ~/.zshenv
-        cp /app/config/zsh/zprofile ~/.zprofile
+        cp $DEVSTACK_CONFIG/zsh/zshrc ~/.zshrc
+        cp $DEVSTACK_CONFIG/zsh/zshenv ~/.zshenv
+        cp $DEVSTACK_CONFIG/zsh/zprofile ~/.zprofile
     uninstall:
       all: rm -f ~/.zshrc ~/.zshenv ~/.zprofile
     check: test -f ~/.zshrc
@@ -150,7 +150,8 @@ tools:
     category: shell
     depends_on: [zsh]
     install:
-      all: curl -sS https://starship.rs/install.sh | sh -s -- --yes
+      alpine: apk add --no-cache starship
+      fallback: curl -sS https://starship.rs/install.sh | sh -s -- --yes --force
     uninstall:
       all: rm -f ~/.local/bin/starship
     check: starship --version
@@ -191,7 +192,10 @@ tools:
   - name: mise
     category: tools
     install:
-      all: curl https://mise.run | sh
+      alpine: |
+        apk add --no-cache tar xz
+        curl -sSL https://github.com/jdx/mise/releases/latest/download/mise-latest-linux-x64.tar.gz | tar xz -C /usr/local/bin --strip-components=1
+      fallback: curl https://mise.run | MISE_YES=1 sh
     uninstall:
       all: rm -rf ~/.local/share/mise
     check: mise --version
@@ -206,6 +210,7 @@ tools:
   - name: rustup
     category: tools
     install:
+      alpine: apk add --no-cache rustup
       all: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     uninstall:
       all: rustup self uninstall -y
@@ -221,7 +226,7 @@ tools:
   - name: opencode
     category: tools
     install:
-      all: curl -sSL https://get.opencode.ai | sh
+      all: curl -sSL https://get.opencode.ai | sh -s -- --yes
     uninstall:
       all: rm -f ~/.opencode/bin/opencode
     check: opencode --version
@@ -278,9 +283,13 @@ tools:
   - name: fzf
     category: tools
     install:
-      all: |
+      alpine: apk add --no-cache fzf
+      debian: sudo apt-get install -y fzf
+      arch: sudo pacman -S --noconfirm fzf
+      fedora: sudo dnf install -y fzf
+      fallback: |
         git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-        ~/.fzf/install --all
+        yes | ~/.fzf/install --bin
     uninstall:
       all: rm -rf ~/.fzf
     check: fzf --version
@@ -428,7 +437,8 @@ tools:
   - name: zoxide
     category: tools
     install:
-      all: curl -sSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+      alpine: apk add --no-cache zoxide
+      fallback: curl -sSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --yes
     uninstall:
       all: rm -f ~/.local/bin/zoxide
     check: zoxide --version
@@ -487,7 +497,8 @@ tools:
   - name: uv
     category: tools
     install:
-      all: curl -LsSf https://astral.sh/uv/install.sh | sh
+      alpine: apk add --no-cache uv
+      all: curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --yes
     uninstall:
       all: rm -f ~/.local/bin/uv
     check: uv --version
@@ -593,7 +604,8 @@ tools:
     category: tools
     depends_on: [rustup]
     install:
-      all: . "$HOME/.cargo/env" && cargo install sd
+      alpine: apk add --no-cache sd
+      fallback: . "$HOME/.cargo/env" && cargo install sd --quiet
     uninstall:
       all: . "$HOME/.cargo/env" && cargo uninstall sd
     check: sd --version
@@ -852,7 +864,7 @@ tools:
     category: shell
     depends_on: [oh-my-zsh]
     install:
-      all: git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+      all: git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
     check: test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
@@ -865,7 +877,7 @@ tools:
     category: shell
     depends_on: [oh-my-zsh]
     install:
-      all: git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+      all: git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
     uninstall:
       all: rm -rf ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
     check: test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
@@ -881,7 +893,8 @@ tools:
   - name: atuin
     category: shell
     install:
-      all: curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+      alpine: apk add --no-cache atuin
+      all: curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --no-modify-config
     uninstall:
       all: rm -f ~/.local/bin/atuin
     check: atuin --version

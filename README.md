@@ -108,6 +108,7 @@ i18n/             ← en/es translations
 
 - Go 1.24+
 - Docker & Docker Compose (optional, for isolated testing)
+- Vagrant + VirtualBox/libvirt (optional, for multi-distro testing)
 
 ### Run Locally
 
@@ -128,8 +129,11 @@ go test -v ./...
 ### Docker (Isolated Environment)
 
 ```bash
-# Run the DevStack installer in a container
+# Run the DevStack installer in CI mode (headless)
 docker compose run app
+
+# Run in interactive TUI mode
+docker compose run app ./envsetup --tui
 
 # Run all tests in a clean container
 docker compose run test
@@ -138,13 +142,49 @@ docker compose run test
 docker compose run shell
 ```
 
-The `app` service builds and runs the installer in an Alpine container — safe to experiment without touching your host system. The `test` service runs the full test suite in isolation.
+The `app` service builds and runs the installer in CI mode by default — no TUI, clean output, auto-detects Docker and skips incompatible tools (kitty, docker, etc.). Use `--tui` flag for interactive mode.
+
+### Vagrant (Multi-Distro Testing)
+
+Boot real Linux VMs to test the installer across distros:
+
+```bash
+vagrant up ubuntu    # Ubuntu 22.04 LTS (~2 min)
+vagrant up arch      # Arch Linux (~3 min)
+
+vagrant ssh ubuntu   # SSH into the VM
+# Inside the VM:
+cd /vagrant
+go run ./cmd/envsetup/
+
+vagrant destroy -f   # Clean up when done
+```
+
+Both VMs come with 2 vCPUs and 2GB RAM. The project root is synced to `/vagrant` so you can build and run the installer directly.
+
+| Distro | Box | Provider |
+|--------|-----|----------|
+| Ubuntu 22.04 | `ubuntu/jammy64` | VirtualBox / libvirt |
+| Arch Linux | `archlinux/archlinux` | VirtualBox / libvirt |
 
 ### Build
 
 ```bash
 go build -o envsetup ./cmd/envsetup/
+
+# Run in CI mode (headless, no TUI)
+./envsetup --ci
+
+# Run in TUI mode (interactive)
+./envsetup
 ```
+
+### CI Mode
+
+The `--ci` flag runs the installer without a TUI — designed for:
+- **Docker testing** — no TTY required, clean output
+- **CI/CD pipelines** — exit code 1 if any tool fails
+- **Quick verification** — see what installs and what doesn't
 
 ## Adding a Tool
 

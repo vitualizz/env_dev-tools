@@ -10,14 +10,15 @@ import (
 
 // ToolInstaller handles installation and uninstallation of tools.
 type ToolInstaller struct {
-	exec  *executor.ShellExecutor
-	distro entities.Distro
+	exec     *executor.ShellExecutor
+	distro   entities.Distro
+	configDir string // path to config directory (for $DEVSTACK_CONFIG)
 }
 
 // NewToolInstaller creates a new installer and auto-detects the distro.
 func NewToolInstaller() *ToolInstaller {
 	return &ToolInstaller{
-		exec:  executor.NewShellExecutor(),
+		exec:   executor.NewShellExecutor(),
 		distro: entities.DetectDistro(),
 	}
 }
@@ -25,8 +26,16 @@ func NewToolInstaller() *ToolInstaller {
 // NewToolInstallerWithDistro creates a new installer for a specific distro.
 func NewToolInstallerWithDistro(distro entities.Distro) *ToolInstaller {
 	return &ToolInstaller{
-		exec:  executor.NewShellExecutor(),
+		exec:   executor.NewShellExecutor(),
 		distro: distro,
+	}
+}
+
+// SetConfigDir sets the config directory path for $DEVSTACK_CONFIG resolution.
+func (i *ToolInstaller) SetConfigDir(dir string) {
+	i.configDir = dir
+	if dir != "" {
+		i.exec.EnvVars = []string{"DEVSTACK_CONFIG=" + dir}
 	}
 }
 
@@ -41,7 +50,7 @@ func (i *ToolInstaller) Install(tool *entities.Tool) (*entities.InstallResult, e
 
 	result := &entities.InstallResult{
 		ToolName: tool.Name,
-		Distro:  i.distro,
+		Distro:   i.distro,
 	}
 
 	cmd := tool.GetInstallCmd(i.distro)
@@ -71,7 +80,7 @@ func (i *ToolInstaller) Uninstall(tool *entities.Tool) (*entities.InstallResult,
 
 	result := &entities.InstallResult{
 		ToolName: tool.Name,
-		Distro:  i.distro,
+		Distro:   i.distro,
 	}
 
 	cmd := tool.GetUninstallCmd(i.distro)
@@ -123,22 +132,18 @@ func cleanOutput(output string) string {
 	var clean []string
 
 	for _, line := range lines {
-		// Skip empty lines at start/end
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		// Skip progress bars and ANSI codes
 		if strings.Contains(line, "\r") {
 			line = strings.SplitN(line, "\r", 2)[1]
 		}
-		// Skip lines that are just ANSI escape codes
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
 		clean = append(clean, line)
 	}
 
-	// If all output was noise, return empty
 	if len(clean) == 0 {
 		return ""
 	}

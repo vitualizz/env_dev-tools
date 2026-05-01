@@ -7,4 +7,6 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-CMD ["sh", "-c", "go build -buildvcs=false -o /tmp/envsetup ./cmd/envsetup/ && /tmp/envsetup"]
+# Build and run in CI mode by default
+# Override with: docker compose run app ./envsetup --tui
+CMD ["sh", "-c", "go build -buildvcs=false -o /tmp/envsetup ./cmd/envsetup/ && /tmp/envsetup --ci"]

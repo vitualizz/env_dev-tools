@@ -3,3 +3,7 @@ envsetup
 
 # opencode runtime
 .opencode/
+
+# Vagrant local state
+.vagrant/
+.vagrant.d/

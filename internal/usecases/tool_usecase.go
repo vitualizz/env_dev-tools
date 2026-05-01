@@ -192,3 +192,35 @@ func alreadyDone(name string, done []*entities.InstallResult) bool {
 	}
 	return false
 }
+
+// ResolveInstallOrder returns tools sorted in dependency order.
+// It includes missing dependencies that are not in the original selection.
+// Duplicate tools are deduplicated.
+func (uc *BatchInstallUseCase) ResolveInstallOrder(tools []entities.Tool) []entities.Tool {
+	seen := make(map[string]bool)
+	var ordered []entities.Tool
+
+	var resolve func(tool entities.Tool)
+	resolve = func(tool entities.Tool) {
+		if seen[tool.Name] {
+			return
+		}
+		seen[tool.Name] = true
+
+		// Resolve dependencies first
+		for _, depName := range tool.DependsOn {
+			dep := uc.repo.GetByID(depName)
+			if dep != nil && dep.HasInstallCommand() {
+				resolve(*dep)
+			}
+		}
+
+		ordered = append(ordered, tool)
+	}
+
+	for _, tool := range tools {
+		resolve(tool)
+	}
+
+	return ordered
+}
